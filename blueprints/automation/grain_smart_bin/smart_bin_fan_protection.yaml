@@ -1,0 +1,1677 @@
+blueprint:
+  name: Grain Bin Fan — Protection + Watchdog (BinX) + Auto Cool
+  description: >
+    Bin fan protection and runtime management:
+    - Auto session start/stop buttons
+    - Auto runtime countdown using stored seconds-left (pause/resume safe)
+    - Fan Monitor Only mode (runs immediately on Start Auto)
+    - Auto Cool mode (runs only when Outside Temp/RH are favorable; pauses/resumes)
+    - Auto Cool anti-chatter: once running, temp can rise above setpoint by a deadband before pausing
+    - Optional Condensation Protection using dew point vs grain temperature
+    - Failed start detection (switch ON but amps stay near zero while commanded ON)
+    - Overcurrent trip with Startup vs Running thresholds
+    - Thermostat / Power-loss trip detect (amps near zero while commanded ON)
+    - Trip reclassify to thermostat/power-loss if amps drop to ~0 while relay still ON
+    - Manual safety shutoff (manual ON but no amps after 60s)
+    Writes last-trip stage/reason/time and latches trip boolean on trip events.
+
+  domain: automation
+  source_url: https://example.invalid/blueprints/grain-bin-fan-protection.yaml
+
+  input:
+    bin_label:
+      name: Bin label for notifications
+      description: "Example: Bin 1"
+      default: "Bin"
+      selector:
+        text: {}
+
+    fan_switch:
+      name: Fan relay switch
+      selector:
+        entity:
+          domain: switch
+
+    amps_sensor:
+      name: Amps sensor
+      selector:
+        entity:
+          domain: sensor
+
+    volts_sensor:
+      name: Volts sensor
+      selector:
+        entity:
+          domain: sensor
+
+    fan_mode:
+      name: Fan Mode (input_select)
+      selector:
+        entity:
+          domain: input_select
+
+    outside_temp:
+      name: Outside temperature (°C)
+      selector:
+        entity:
+          domain: sensor
+
+    outside_humidity:
+      name: Outside humidity (%)
+      selector:
+        entity:
+          domain: sensor
+
+    grain_temp:
+      name: Grain temperature (°C)
+      selector:
+        entity:
+          domain: sensor
+
+    dewpoint_sensor:
+      name: Dew point sensor (°C)
+      selector:
+        entity:
+          domain: sensor
+
+    condensation_protection:
+      name: Condensation Protection toggle
+      selector:
+        entity:
+          domain: input_boolean
+
+    condensation_margin:
+      name: Condensation Protection margin (°C)
+      selector:
+        entity:
+          domain: input_number
+
+    auto_cool_temp:
+      name: Auto Cool max temp (°C) to RUN (turn-on threshold)
+      selector:
+        entity:
+          domain: input_number
+
+    auto_cool_temp_deadband:
+      name: Auto Cool temp deadband (°C) — keeps fan from chattering
+      selector:
+        entity:
+          domain: input_number
+
+    auto_cool_humidity:
+      name: Auto Cool max humidity (%) to RUN
+      selector:
+        entity:
+          domain: input_number
+
+    auto_cool_paused:
+      name: Auto Cool Paused (input_boolean)
+      selector:
+        entity:
+          domain: input_boolean
+
+    auto_cool_pause_reason:
+      name: Auto Cool Pause Reason (input_text)
+      selector:
+        entity:
+          domain: input_text
+
+    auto_active:
+      name: Auto active boolean
+      selector:
+        entity:
+          domain: input_boolean
+
+    trip_latched:
+      name: Trip latched boolean
+      selector:
+        entity:
+          domain: input_boolean
+
+    start_button:
+      name: Start Auto button
+      selector:
+        entity:
+          domain: input_button
+
+    stop_button:
+      name: Stop Auto button
+      selector:
+        entity:
+          domain: input_button
+
+    clear_trip_button:
+      name: Clear Trip button
+      selector:
+        entity:
+          domain: input_button
+
+    auto_runtime_hours:
+      name: Auto max runtime hours
+      selector:
+        entity:
+          domain: input_number
+
+    auto_seconds_left:
+      name: Auto seconds left (countdown storage)
+      selector:
+        entity:
+          domain: input_number
+
+    auto_start_time:
+      name: Auto start datetime
+      selector:
+        entity:
+          domain: input_datetime
+
+    manual_start_time:
+      name: Manual start datetime
+      selector:
+        entity:
+          domain: input_datetime
+
+    fla_number:
+      name: Fan FLA (A)
+      selector:
+        entity:
+          domain: input_number
+
+    mult_start_number:
+      name: Startup multiplier
+      selector:
+        entity:
+          domain: input_number
+
+    mult_run_number:
+      name: Running multiplier
+      selector:
+        entity:
+          domain: input_number
+
+    startup_trip_seconds:
+      name: Startup trip seconds (input_select)
+      selector:
+        entity:
+          domain: input_select
+
+    running_trip_seconds:
+      name: Running trip seconds (input_select)
+      selector:
+        entity:
+          domain: input_select
+
+    startup_ignore_seconds:
+      name: Startup ignore seconds (for peak/power/thermostat ignore)
+      selector:
+        entity:
+          domain: input_number
+
+    last_trip_stage:
+      name: Last trip stage (input_text)
+      selector:
+        entity:
+          domain: input_text
+
+    last_trip_reason:
+      name: Last trip reason (input_text)
+      selector:
+        entity:
+          domain: input_text
+
+    last_trip_time:
+      name: Last trip time (input_datetime)
+      selector:
+        entity:
+          domain: input_datetime
+
+    last_known_state:
+      name: Last known state (input_text)
+      selector:
+        entity:
+          domain: input_text
+
+    last_known_update:
+      name: Last known update (input_datetime)
+      selector:
+        entity:
+          domain: input_datetime
+
+    reset_lifetime_button:
+      name: Reset Lifetime Cost button
+      description: "Press to reset the lifetime kWh utility_meter for this bin."
+      selector:
+        entity:
+          domain: input_button
+
+    lifetime_energy_total_kwh:
+      name: Lifetime Energy Total (kWh) utility_meter sensor
+      description: "The utility_meter entity to reset (example: sensor.bin1_energy_total_kwh)."
+      selector:
+        entity:
+          domain: sensor
+
+    reset_savings_button:
+      name: Reset Auto Cool Savings button
+      description: "Press to reset the Auto Cool saved kWh utility_meter for this bin."
+      selector:
+        entity:
+          domain: input_button
+
+    savings_energy_total_kwh:
+      name: Auto Cool Saved Energy Total (kWh) utility_meter sensor
+      description: "The utility_meter entity to reset (example: sensor.bin1_auto_cool_saved_total_kwh)."
+      selector:
+        entity:
+          domain: sensor
+
+    notify_on_trip:
+      name: Notification action — Fan TRIPPED
+      description: >
+        Optional. Pick an action (usually "Notifications: Send a notification via mobile_app")
+        to run when trip_latched turns ON.
+        You can use the variables notify_title and notify_message in your notification message.
+      default: []
+      selector:
+        action: {}
+
+    notify_on_complete:
+      name: Notification action — Auto runtime COMPLETED
+      description: >
+        Optional. Pick an action (usually "Notifications: Send a notification via mobile_app")
+        to run when auto runtime reaches 0 and auto is shut off.
+        You can use the variables notify_title and notify_message in your notification message.
+      default: []
+      selector:
+        action: {}
+
+    global_last_start:
+      name: Global next allowed AUTO-START time (shared input_datetime)
+      description: >
+        Create ONE input_datetime helper and select the SAME one in every bin instance.
+        This stores the NEXT allowed start time (reservation) to prevent same-time starts.
+      selector:
+        entity:
+          domain: input_datetime
+
+    global_stagger_seconds:
+      name: Global stagger seconds between AUTO-STARTS (shared input_number)
+      description: >
+        Create ONE input_number helper (set to 30, for example) and select the SAME one in every bin instance.
+      selector:
+        entity:
+          domain: input_number
+
+    global_lock:
+      name: Global start queue lock (shared input_boolean)
+      description: >
+        Create ONE input_boolean helper (fan_start_queue_lock) and select the SAME one in every bin instance.
+      selector:
+        entity:
+          domain: input_boolean
+
+mode: parallel
+max: 10
+max_exceeded: silent
+
+trigger:
+  - platform: state
+    entity_id: !input start_button
+    id: start_pressed
+
+  - platform: state
+    entity_id: !input stop_button
+    id: stop_pressed
+
+  - platform: state
+    entity_id: !input clear_trip_button
+    id: clear_trip_pressed
+
+  - platform: state
+    entity_id: !input auto_runtime_hours
+    id: runtime_changed
+
+  - platform: state
+    entity_id: !input reset_lifetime_button
+    id: reset_lifetime_pressed
+
+  - platform: state
+    entity_id: !input reset_savings_button
+    id: reset_savings_pressed
+
+  - platform: time_pattern
+    seconds: "/10"
+    id: watchdog_tick
+
+  - platform: time_pattern
+    seconds: "/30"
+    id: autocool_tick
+
+  - platform: time_pattern
+    seconds: "/5"
+    id: manual_tick
+
+  - platform: state
+    entity_id: !input fan_switch
+    to: "on"
+    id: fan_on
+
+  - platform: state
+    entity_id: !input fan_switch
+    to: "off"
+    id: fan_off
+
+  - platform: state
+    entity_id: !input fan_switch
+    from:
+      - "unavailable"
+      - "unknown"
+    to: "off"
+    id: fan_reconnect_off
+
+  - platform: state
+    entity_id: !input amps_sensor
+    id: amps_change
+
+  - platform: time_pattern
+    seconds: "/1"
+    id: oc_tick
+
+  - platform: numeric_state
+    entity_id: !input amps_sensor
+    below: 0.2
+    for:
+      seconds: 10
+    id: amps_low_10s
+
+  - platform: numeric_state
+    entity_id: !input amps_sensor
+    below: 0.2
+    for:
+      seconds: 60
+    id: amps_low_60s
+
+  - platform: state
+    entity_id: !input trip_latched
+    to: "on"
+    id: trip_on
+
+  - platform: state
+    entity_id: !input auto_active
+    to: "on"
+    id: auto_toggled_on
+
+variables:
+  bin_label_val: !input bin_label
+
+  fan: !input fan_switch
+  amps_ent: !input amps_sensor
+  volts_ent: !input volts_sensor
+
+  mode_ent: !input fan_mode
+  out_t_ent: !input outside_temp
+  out_rh_ent: !input outside_humidity
+  grain_t_ent: !input grain_temp
+  dewpoint_ent: !input dewpoint_sensor
+  cond_protect_ent: !input condensation_protection
+  cond_margin_ent: !input condensation_margin
+
+  cool_t_ent: !input auto_cool_temp
+  cool_db_ent: !input auto_cool_temp_deadband
+  cool_rh_ent: !input auto_cool_humidity
+
+  paused_ent: !input auto_cool_paused
+  paused_reason_ent: !input auto_cool_pause_reason
+  paused: "{{ is_state(paused_ent,'on') }}"
+
+  auto: !input auto_active
+  trip: !input trip_latched
+
+  auto_hrs_ent: !input auto_runtime_hours
+  auto_sec_ent: !input auto_seconds_left
+  auto_start_ent: !input auto_start_time
+  manual_start_ent: !input manual_start_time
+
+  fla_ent: !input fla_number
+  mult_start_ent: !input mult_start_number
+  mult_run_ent: !input mult_run_number
+  startup_sel: !input startup_trip_seconds
+  running_sel: !input running_trip_seconds
+  ignore_ent: !input startup_ignore_seconds
+
+  last_stage_ent: !input last_trip_stage
+  last_reason_ent: !input last_trip_reason
+  last_time_ent: !input last_trip_time
+
+  lk_state_ent: !input last_known_state
+  lk_update_ent: !input last_known_update
+
+  lifetime_kwh_ent: !input lifetime_energy_total_kwh
+  savings_kwh_ent: !input savings_energy_total_kwh
+
+  notify_trip_actions: !input notify_on_trip
+  notify_complete_actions: !input notify_on_complete
+
+  global_last_start_ent: !input global_last_start
+  global_stagger_ent: !input global_stagger_seconds
+  global_lock_ent: !input global_lock
+
+  amps: "{{ ((states(amps_ent) | string | regex_replace('[^0-9\\.-]', '')) | float(0)) | abs }}"
+  volts: "{{ (states(volts_ent) | string | regex_replace('[^0-9\\.-]', '')) | float(0) }}"
+
+  mode_val: "{{ states(mode_ent) | string }}"
+
+  out_t_state: "{{ states(out_t_ent) | string }}"
+  out_rh_state: "{{ states(out_rh_ent) | string }}"
+  grain_t_state: "{{ states(grain_t_ent) | string }}"
+  dewpoint_state: "{{ states(dewpoint_ent) | string }}"
+
+  sensors_ok: >
+    {{ out_t_state not in ['unknown','unavailable','none',''] and
+       out_rh_state not in ['unknown','unavailable','none',''] }}
+
+  cond_inputs_ok: >
+    {{ grain_t_state not in ['unknown','unavailable','none',''] and
+       dewpoint_state not in ['unknown','unavailable','none',''] }}
+
+  out_t: "{{ states(out_t_ent) | float(999) }}"
+  out_rh: "{{ states(out_rh_ent) | float(999) }}"
+  grain_t: "{{ states(grain_t_ent) | float(999) }}"
+  dewpoint: "{{ states(dewpoint_ent) | float(999) }}"
+  cond_margin: "{{ states(cond_margin_ent) | float(3) }}"
+  cond_protect_on: "{{ is_state(cond_protect_ent, 'on') }}"
+
+  cool_t: "{{ states(cool_t_ent) | float(15) }}"
+  cool_db: "{{ states(cool_db_ent) | float(0.0) }}"
+  cool_rh: "{{ states(cool_rh_ent) | float(95) }}"
+
+  hrs: "{{ states(auto_hrs_ent) | float(0) }}"
+  secs_left: "{{ states(auto_sec_ent) | int(0) }}"
+
+  ignore_s: "{{ states(ignore_ent) | float(0) }}"
+  fla: "{{ states(fla_ent) | float(0) }}"
+  mult_start: "{{ states(mult_start_ent) | float(0) }}"
+  mult_run: "{{ states(mult_run_ent) | float(0) }}"
+  startup_from_s: "{{ (states(startup_sel) | regex_replace('[^0-9]', '') | int(0)) }}"
+  running_from_s: "{{ (states(running_sel) | regex_replace('[^0-9]', '') | int(0)) }}"
+
+  fan_is_on: "{{ is_state(fan,'on') }}"
+
+  autocool_temp_ok: >
+    {% if not sensors_ok %}
+      false
+    {% elif fan_is_on %}
+      {{ out_t <= (cool_t + cool_db) }}
+    {% else %}
+      {{ out_t <= cool_t }}
+    {% endif %}
+
+  condensation_ok: >
+    {% if not cond_protect_on %}
+      true
+    {% elif not cond_inputs_ok %}
+      false
+    {% else %}
+      {{ dewpoint < (grain_t - cond_margin) }}
+    {% endif %}
+
+  autocool_ok: >
+    {{ sensors_ok and autocool_temp_ok and out_rh <= cool_rh and condensation_ok }}
+
+  autocool_reason: >
+    {% if not sensors_ok %}
+      Paused — Outside sensors unavailable
+    {% else %}
+      {% set t_limit = (cool_t + cool_db) if fan_is_on else cool_t %}
+      {% set too_warm = out_t > t_limit %}
+      {% set too_humid = out_rh > cool_rh %}
+      {% set cond_blocked = cond_protect_on and ((not cond_inputs_ok) or (not condensation_ok)) %}
+      {% if too_warm and too_humid and cond_blocked %}
+        Paused — Too warm, too humid, and Condensation Risk
+      {% elif too_warm and too_humid %}
+        Paused — Too warm ({{ out_t|round(1) }}°C > {{ t_limit|round(1) }}°C) and too humid ({{ out_rh|round(1) }}% > {{ cool_rh|round(1) }}%)
+      {% elif too_warm and cond_blocked %}
+        Paused — Too warm ({{ out_t|round(1) }}°C > {{ t_limit|round(1) }}°C) and Condensation Risk
+      {% elif too_humid and cond_blocked %}
+        Paused — Too humid ({{ out_rh|round(1) }}% > {{ cool_rh|round(1) }}%) and Condensation Risk
+      {% elif too_warm %}
+        Paused — Too warm ({{ out_t|round(1) }}°C > {{ t_limit|round(1) }}°C)
+      {% elif too_humid %}
+        Paused — Too humid ({{ out_rh|round(1) }}% > {{ cool_rh|round(1) }}%)
+      {% elif cond_protect_on and not cond_inputs_ok %}
+        Paused — Condensation Protection unavailable
+      {% elif cond_blocked %}
+        Paused — Condensation Risk
+      {% else %}
+        Running — Conditions OK
+      {% endif %}
+    {% endif %}
+
+  now_ts: "{{ as_timestamp(now()) | float(0) }}"
+  global_next_allowed_raw: "{{ as_timestamp(states(global_last_start_ent)) | float(0) }}"
+  global_next_allowed_ts: >
+    {% set t = global_next_allowed_raw | float(0) %}
+    {% set n = now_ts | float(0) %}
+    {% if t <= 0 %}
+      0
+    {% elif t > (n + 600) %}
+      0
+    {% else %}
+      {{ t }}
+    {% endif %}
+  global_stagger_s: "{{ states(global_stagger_ent) | int(0) }}"
+  start_wait_s: "{{ [ (global_next_allowed_ts - now_ts) | int(0), 0 ] | max }}"
+
+action:
+  - choose:
+
+      - conditions:
+          - condition: trigger
+            id: auto_toggled_on
+        sequence:
+          - condition: state
+            entity_id: !input trip_latched
+            state: "off"
+          - condition: state
+            entity_id: !input fan_switch
+            state: "on"
+          - variables:
+              fan_on_ts_claim: "{{ as_timestamp(states[fan].last_changed) | float(0) }}"
+          - service: input_datetime.set_datetime
+            target:
+              entity_id: !input auto_start_time
+            data:
+              datetime: "{{ (fan_on_ts_claim | timestamp_custom('%Y-%m-%d %H:%M:%S', true)) }}"
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ (states(auto_sec_ent) | int(0)) <= 0 and hrs > 0 }}"
+                sequence:
+                  - service: input_number.set_value
+                    target:
+                      entity_id: !input auto_seconds_left
+                    data:
+                      value: "{{ (hrs * 3600) | int(0) }}"
+            default: []
+          - service: input_text.set_value
+            target:
+              entity_id: !input last_known_state
+            data:
+              value: "AUTO_ON"
+          - service: input_datetime.set_datetime
+            target:
+              entity_id: !input last_known_update
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+      - conditions:
+          - condition: trigger
+            id: reset_lifetime_pressed
+        sequence:
+          - stop: "Lifetime reset handled by package baseline automation"
+
+      - conditions:
+          - condition: trigger
+            id: reset_savings_pressed
+        sequence:
+          - stop: "Savings reset handled by package baseline automation"
+
+      - conditions:
+          - condition: trigger
+            id: runtime_changed
+        sequence:
+          - condition: state
+            entity_id: !input auto_active
+            state: "on"
+          - condition: state
+            entity_id: !input trip_latched
+            state: "off"
+          - condition: template
+            value_template: "{{ hrs > 0 }}"
+          - service: input_number.set_value
+            target:
+              entity_id: !input auto_seconds_left
+            data:
+              value: "{{ (hrs * 3600) | int(0) }}"
+          - service: input_datetime.set_datetime
+            target:
+              entity_id: !input last_known_update
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+      - conditions:
+          - condition: trigger
+            id: start_pressed
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: state
+                    entity_id: !input trip_latched
+                    state: "on"
+                sequence:
+                  - stop: "Trip latched"
+              - conditions:
+                  - condition: template
+                    value_template: "{{ hrs <= 0 }}"
+                sequence:
+                  - stop: "Runtime zero"
+            default:
+              - service: input_boolean.turn_on
+                target:
+                  entity_id: !input auto_active
+
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ (states(auto_sec_ent) | int(0)) <= 0 }}"
+                    sequence:
+                      - service: input_number.set_value
+                        target:
+                          entity_id: !input auto_seconds_left
+                        data:
+                          value: "{{ (hrs * 3600) | int(0) }}"
+                default: []
+
+              - service: input_text.set_value
+                target:
+                  entity_id: !input last_known_state
+                data:
+                  value: "AUTO_ON"
+              - service: input_datetime.set_datetime
+                target:
+                  entity_id: !input last_known_update
+                data:
+                  datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+              - choose:
+                  - conditions:
+                      - condition: state
+                        entity_id: !input fan_switch
+                        state: "on"
+                    sequence:
+                      - service: input_datetime.set_datetime
+                        target:
+                          entity_id: !input auto_start_time
+                        data:
+                          datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+                      - service: input_boolean.turn_off
+                        target:
+                          entity_id: !input auto_cool_paused
+                      - service: input_text.set_value
+                        target:
+                          entity_id: !input auto_cool_pause_reason
+                        data:
+                          value: ""
+                default:
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ mode_val == 'Auto Cool' }}"
+                        sequence:
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: "{{ autocool_ok }}"
+                                sequence:
+                                  - repeat:
+                                      while:
+                                        - condition: state
+                                          entity_id: !input global_lock
+                                          state: "on"
+                                      sequence:
+                                        - delay: "00:00:01"
+
+                                  - service: input_boolean.turn_on
+                                    target:
+                                      entity_id: !input global_lock
+
+                                  - variables:
+                                      now_ts2: "{{ as_timestamp(now()) | float(0) }}"
+                                      next_allowed_raw2: "{{ as_timestamp(states(global_last_start_ent)) | float(0) }}"
+                                      next_allowed_ts2: >
+                                        {% set t = next_allowed_raw2 | float(0) %}
+                                        {% set n = now_ts2 | float(0) %}
+                                        {% if t <= 0 %}
+                                          {{ n }}
+                                        {% elif t > (n + 600) %}
+                                          {{ n }}
+                                        {% else %}
+                                          {{ t }}
+                                        {% endif %}
+                                      gss_now: "{{ states(global_stagger_ent) | int(0) }}"
+                                      wait_now: "{{ [ (next_allowed_ts2 - now_ts2) | int(0), 0 ] | max }}"
+                                      reserved_start_ts: "{{ now_ts2 + wait_now }}"
+                                      new_next_allowed_ts: "{{ reserved_start_ts + gss_now }}"
+
+                                  - service: input_datetime.set_datetime
+                                    target:
+                                      entity_id: !input global_last_start
+                                    data:
+                                      datetime: "{{ (new_next_allowed_ts | timestamp_custom('%Y-%m-%d %H:%M:%S', true)) }}"
+
+                                  - service: input_boolean.turn_off
+                                    target:
+                                      entity_id: !input global_lock
+
+                                  - choose:
+                                      - conditions:
+                                          - condition: template
+                                            value_template: "{{ wait_now > 0 }}"
+                                        sequence:
+                                          - service: input_boolean.turn_on
+                                            target:
+                                              entity_id: !input auto_cool_paused
+                                          - service: input_text.set_value
+                                            target:
+                                              entity_id: !input auto_cool_pause_reason
+                                            data:
+                                              value: "⏳ Waiting on fan start delay ({{ wait_now }}s)"
+                                          - delay:
+                                              seconds: "{{ wait_now }}"
+                                          - service: input_boolean.turn_off
+                                            target:
+                                              entity_id: !input auto_cool_paused
+                                          - service: input_text.set_value
+                                            target:
+                                              entity_id: !input auto_cool_pause_reason
+                                            data:
+                                              value: ""
+                                    default: []
+
+                                  - condition: state
+                                    entity_id: !input auto_active
+                                    state: "on"
+                                  - condition: state
+                                    entity_id: !input trip_latched
+                                    state: "off"
+                                  - condition: template
+                                    value_template: "{{ autocool_ok }}"
+                                  - condition: state
+                                    entity_id: !input fan_switch
+                                    state: "off"
+
+                                  - service: input_datetime.set_datetime
+                                    target:
+                                      entity_id: !input auto_start_time
+                                    data:
+                                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+                                  - delay: "00:00:01"
+                                  - service: switch.turn_on
+                                    target:
+                                      entity_id: !input fan_switch
+
+                            default:
+                              - service: input_boolean.turn_on
+                                target:
+                                  entity_id: !input auto_cool_paused
+                              - service: input_text.set_value
+                                target:
+                                  entity_id: !input auto_cool_pause_reason
+                                data:
+                                  value: "{{ autocool_reason }}"
+                    default:
+                      - service: input_boolean.turn_off
+                        target:
+                          entity_id: !input auto_cool_paused
+                      - service: input_text.set_value
+                        target:
+                          entity_id: !input auto_cool_pause_reason
+                        data:
+                          value: ""
+                      - service: input_datetime.set_datetime
+                        target:
+                          entity_id: !input auto_start_time
+                        data:
+                          datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+                      - delay: "00:00:01"
+                      - service: switch.turn_on
+                        target:
+                          entity_id: !input fan_switch
+
+      - conditions:
+          - condition: trigger
+            id: stop_pressed
+        sequence:
+          - service: switch.turn_off
+            target:
+              entity_id: !input fan_switch
+          - service: input_boolean.turn_off
+            target:
+              entity_id: !input auto_active
+          - service: input_number.set_value
+            target:
+              entity_id: !input auto_seconds_left
+            data:
+              value: 0
+          - service: input_boolean.turn_off
+            target:
+              entity_id: !input auto_cool_paused
+          - service: input_text.set_value
+            target:
+              entity_id: !input auto_cool_pause_reason
+            data:
+              value: ""
+          - service: input_text.set_value
+            target:
+              entity_id: !input last_known_state
+            data:
+              value: "AUTO_OFF"
+          - service: input_datetime.set_datetime
+            target:
+              entity_id: !input last_known_update
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+      - conditions:
+          - condition: trigger
+            id: clear_trip_pressed
+        sequence:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: !input trip_latched
+
+      - conditions:
+          - condition: trigger
+            id: autocool_tick
+          - condition: state
+            entity_id: !input auto_active
+            state: "on"
+          - condition: state
+            entity_id: !input trip_latched
+            state: "off"
+          - condition: template
+            value_template: "{{ mode_val == 'Auto Cool' }}"
+          - condition: template
+            value_template: "{{ (states(auto_sec_ent) | int(0)) > 0 }}"
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ not sensors_ok }}"
+                sequence:
+                  - service: input_boolean.turn_on
+                    target:
+                      entity_id: !input auto_cool_paused
+                  - service: input_text.set_value
+                    target:
+                      entity_id: !input auto_cool_pause_reason
+                    data:
+                      value: "{{ autocool_reason }}"
+            default:
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ autocool_ok }}"
+                    sequence:
+                      - service: input_boolean.turn_off
+                        target:
+                          entity_id: !input auto_cool_paused
+                      - service: input_text.set_value
+                        target:
+                          entity_id: !input auto_cool_pause_reason
+                        data:
+                          value: ""
+                      - choose:
+                          - conditions:
+                              - condition: state
+                                entity_id: !input fan_switch
+                                state: "off"
+                            sequence:
+                              - repeat:
+                                  while:
+                                    - condition: state
+                                      entity_id: !input global_lock
+                                      state: "on"
+                                  sequence:
+                                    - delay: "00:00:01"
+
+                              - service: input_boolean.turn_on
+                                target:
+                                  entity_id: !input global_lock
+
+                              - variables:
+                                  now_ts3: "{{ as_timestamp(now()) | float(0) }}"
+                                  next_allowed_raw3: "{{ as_timestamp(states(global_last_start_ent)) | float(0) }}"
+                                  next_allowed_ts3: >
+                                    {% set t = next_allowed_raw3 | float(0) %}
+                                    {% set n = now_ts3 | float(0) %}
+                                    {% if t <= 0 %}
+                                      {{ n }}
+                                    {% elif t > (n + 600) %}
+                                      {{ n }}
+                                    {% else %}
+                                      {{ t }}
+                                    {% endif %}
+                                  gss_now: "{{ states(global_stagger_ent) | int(0) }}"
+                                  wait_now: "{{ [ (next_allowed_ts3 - now_ts3) | int(0), 0 ] | max }}"
+                                  reserved_start_ts: "{{ now_ts3 + wait_now }}"
+                                  new_next_allowed_ts: "{{ reserved_start_ts + gss_now }}"
+
+                              - service: input_datetime.set_datetime
+                                target:
+                                  entity_id: !input global_last_start
+                                data:
+                                  datetime: "{{ (new_next_allowed_ts | timestamp_custom('%Y-%m-%d %H:%M:%S', true)) }}"
+
+                              - service: input_boolean.turn_off
+                                target:
+                                  entity_id: !input global_lock
+
+                              - choose:
+                                  - conditions:
+                                      - condition: template
+                                        value_template: "{{ wait_now > 0 }}"
+                                    sequence:
+                                      - service: input_boolean.turn_on
+                                        target:
+                                          entity_id: !input auto_cool_paused
+                                      - service: input_text.set_value
+                                        target:
+                                          entity_id: !input auto_cool_pause_reason
+                                        data:
+                                          value: "⏳ Waiting on fan start delay ({{ wait_now }}s)"
+                                      - delay:
+                                          seconds: "{{ wait_now }}"
+                                      - service: input_boolean.turn_off
+                                        target:
+                                          entity_id: !input auto_cool_paused
+                                      - service: input_text.set_value
+                                        target:
+                                          entity_id: !input auto_cool_pause_reason
+                                        data:
+                                          value: ""
+                                default: []
+
+                              - condition: state
+                                entity_id: !input auto_active
+                                state: "on"
+                              - condition: state
+                                entity_id: !input trip_latched
+                                state: "off"
+                              - condition: template
+                                value_template: "{{ autocool_ok }}"
+                              - condition: state
+                                entity_id: !input fan_switch
+                                state: "off"
+
+                              - service: input_datetime.set_datetime
+                                target:
+                                  entity_id: !input auto_start_time
+                                data:
+                                  datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+                              - delay: "00:00:01"
+                              - service: switch.turn_on
+                                target:
+                                  entity_id: !input fan_switch
+                        default: []
+                default:
+                  - service: input_boolean.turn_on
+                    target:
+                      entity_id: !input auto_cool_paused
+                  - service: input_text.set_value
+                    target:
+                      entity_id: !input auto_cool_pause_reason
+                    data:
+                      value: "{{ autocool_reason }}"
+                  - choose:
+                      - conditions:
+                          - condition: state
+                            entity_id: !input fan_switch
+                            state: "on"
+                        sequence:
+                          - service: switch.turn_off
+                            target:
+                              entity_id: !input fan_switch
+                    default: []
+
+      - conditions:
+          - condition: trigger
+            id: fan_on
+        sequence:
+          - variables:
+              from_state: "{{ trigger.from_state.state if trigger.from_state is not none else '' }}"
+              is_reconnect: "{{ from_state in ['unavailable','unknown'] }}"
+              is_auto_now: "{{ is_state(auto, 'on') }}"
+
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ not is_reconnect }}"
+                sequence:
+                  - service: input_text.set_value
+                    target:
+                      entity_id: !input last_known_state
+                    data:
+                      value: "{{ 'AUTO_ON' if is_auto_now else 'MANUAL_ON' }}"
+                  - service: input_datetime.set_datetime
+                    target:
+                      entity_id: !input last_known_update
+                    data:
+                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+            default: []
+
+          - parallel:
+              - sequence:
+                  - condition: template
+                    value_template: "{{ not is_reconnect }}"
+
+                  - variables:
+                      fan_on_ts: "{{ as_timestamp(states[fan].last_changed) | float(0) }}"
+                      auto_ts: "{{ as_timestamp(states(auto_start_ent)) | float(0) }}"
+                      auto_matches_fan_on: >
+                        {{ auto_ts > 0
+                           and (fan_on_ts - auto_ts) | abs <= 15
+                           and is_state(auto, 'on')
+                           and is_state(trip, 'off') }}
+
+                  - choose:
+                      - conditions:
+                          - condition: state
+                            entity_id: !input auto_active
+                            state: "off"
+                        sequence:
+                          - service: input_datetime.set_datetime
+                            target:
+                              entity_id: !input manual_start_time
+                            data:
+                              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+                    default: []
+
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ not auto_matches_fan_on }}"
+                        sequence:
+                          - delay:
+                              seconds: 60
+                          - condition: state
+                            entity_id: !input fan_switch
+                            state: "on"
+                          - variables:
+                              fan_on_ts2: "{{ as_timestamp(states[fan].last_changed) | float(0) }}"
+                              auto_ts2: "{{ as_timestamp(states(auto_start_ent)) | float(0) }}"
+                              auto_matches_fan_on2: >
+                                {{ auto_ts2 > 0
+                                   and (fan_on_ts2 - auto_ts2) | abs <= 15
+                                   and is_state(auto, 'on')
+                                   and is_state(trip, 'off') }}
+                              fan_on_for_s_60: "{{ (as_timestamp(now()) - as_timestamp(states[fan].last_changed)) | int(0) }}"
+                          - condition: template
+                            value_template: "{{ not auto_matches_fan_on2 }}"
+                          - condition: template
+                            value_template: "{{ fan_on_for_s_60 >= 60 }}"
+                          - condition: numeric_state
+                            entity_id: !input amps_sensor
+                            below: 0.2
+
+                          - service: input_text.set_value
+                            target:
+                              entity_id: !input last_trip_stage
+                            data:
+                              value: "MANUAL"
+
+                          - service: input_text.set_value
+                            target:
+                              entity_id: !input last_trip_reason
+                            data:
+                              value: "Failed Start (No current after 60s)"
+
+                          - service: input_datetime.set_datetime
+                            target:
+                              entity_id: !input last_trip_time
+                            data:
+                              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+                          - service: logbook.log
+                            data:
+                              name: "Grain Bin Fan Trip"
+                              message: "MANUAL — Failed Start (No current after 60s)"
+                              entity_id: !input fan_switch
+
+                          - service: switch.turn_off
+                            target:
+                              entity_id: !input fan_switch
+                    default: []
+
+              - sequence:
+                  - condition: template
+                    value_template: "{{ not is_reconnect }}"
+                  - condition: state
+                    entity_id: !input trip_latched
+                    state: "off"
+
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ is_state(auto,'on') and mode_val == 'Auto Cool' and is_state(paused_ent,'on') }}"
+                        sequence:
+                          - service: input_boolean.turn_off
+                            target:
+                              entity_id: !input auto_cool_paused
+                          - service: input_text.set_value
+                            target:
+                              entity_id: !input auto_cool_pause_reason
+                            data:
+                              value: ""
+                    default: []
+
+                  - delay:
+                      seconds: 10
+                  - condition: state
+                    entity_id: !input fan_switch
+                    state: "on"
+                  - variables:
+                      fan_on_for_s_10: "{{ (as_timestamp(now()) - as_timestamp(states[fan].last_changed)) | int(0) }}"
+                  - condition: template
+                    value_template: "{{ fan_on_for_s_10 >= 10 }}"
+                  - condition: numeric_state
+                    entity_id: !input amps_sensor
+                    below: 0.2
+
+                  - variables:
+                      is_auto_now2: "{{ is_state(auto, 'on') }}"
+
+                  - service: input_text.set_value
+                    target:
+                      entity_id: !input last_trip_stage
+                    data:
+                      value: "{{ 'START' if is_auto_now2 else 'MANUAL' }}"
+
+                  - service: input_text.set_value
+                    target:
+                      entity_id: !input last_trip_reason
+                    data:
+                      value: "Failed Start (No current after 10s)"
+
+                  - service: input_datetime.set_datetime
+                    target:
+                      entity_id: !input last_trip_time
+                    data:
+                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+                  - service: logbook.log
+                    data:
+                      name: "Grain Bin Fan Trip"
+                      message: "{{ ('AUTO' if is_auto_now2 else 'MANUAL') ~ ' — Failed Start (No current after 10s)' }}"
+                      entity_id: !input fan_switch
+
+                  - service: input_boolean.turn_on
+                    target:
+                      entity_id: !input trip_latched
+
+                  - service: switch.turn_off
+                    target:
+                      entity_id: !input fan_switch
+
+                  - service: input_boolean.turn_off
+                    target:
+                      entity_id: !input auto_active
+
+      - conditions:
+          - condition: trigger
+            id: fan_reconnect_off
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ is_state(auto,'on') and mode_val == 'Auto Cool' and is_state(paused_ent,'on') }}"
+                sequence:
+                  - stop: "Auto Cool paused — ignore reconnect OFF (not a power loss trip)"
+            default: []
+
+          - variables:
+              lk: "{{ states(lk_state_ent) | string }}"
+              expect_on: "{{ lk in ['AUTO_ON','MANUAL_ON'] }}"
+              lk_mode: "{{ 'AUTO' if lk == 'AUTO_ON' else 'MANUAL' }}"
+              auto_now: "{{ is_state(auto,'on') }}"
+              reason_pl: >
+                {% if lk == 'AUTO_ON' %}
+                  Power Loss (Auto was running — recovered OFF)
+                {% else %}
+                  Power Loss (Manual was running — recovered OFF)
+                {% endif %}
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ expect_on }}"
+                  - condition: state
+                    entity_id: !input trip_latched
+                    state: "off"
+                sequence:
+                  - service: input_text.set_value
+                    target:
+                      entity_id: !input last_trip_stage
+                    data:
+                      value: "Fan"
+                  - service: input_text.set_value
+                    target:
+                      entity_id: !input last_trip_reason
+                    data:
+                      value: "{{ reason_pl }}"
+                  - service: input_datetime.set_datetime
+                    target:
+                      entity_id: !input last_trip_time
+                    data:
+                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+                  - service: logbook.log
+                    data:
+                      name: "Grain Bin Fan Trip"
+                      message: "{{ lk_mode ~ ' — ' ~ reason_pl }}"
+                      entity_id: !input fan_switch
+
+                  - service: input_boolean.turn_on
+                    target:
+                      entity_id: !input trip_latched
+
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ auto_now }}"
+                        sequence:
+                          - service: input_boolean.turn_off
+                            target:
+                              entity_id: !input auto_active
+                    default: []
+            default: []
+
+      - conditions:
+          - condition: trigger
+            id: fan_off
+        sequence:
+          - variables:
+              from_state: "{{ trigger.from_state.state if trigger.from_state is not none else '' }}"
+              is_reconnect: "{{ from_state in ['unavailable','unknown'] }}"
+              is_auto_now: "{{ is_state(auto, 'on') }}"
+              pause_reason_now: "{{ states(paused_reason_ent) | string }}"
+              pause_reason_ok: "{{ pause_reason_now not in ['','unknown','unavailable','none'] }}"
+              is_autocool_pause_off: >
+                {{ is_auto_now
+                   and mode_val == 'Auto Cool'
+                   and is_state(paused_ent,'on')
+                   and pause_reason_ok }}
+
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ (not is_reconnect) and is_auto_now and (not is_autocool_pause_off) }}"
+                sequence:
+                  - service: input_boolean.turn_off
+                    target:
+                      entity_id: !input auto_active
+                  - service: input_number.set_value
+                    target:
+                      entity_id: !input auto_seconds_left
+                    data:
+                      value: 0
+                  - service: input_boolean.turn_off
+                    target:
+                      entity_id: !input auto_cool_paused
+                  - service: input_text.set_value
+                    target:
+                      entity_id: !input auto_cool_pause_reason
+                    data:
+                      value: ""
+                  - service: input_text.set_value
+                    target:
+                      entity_id: !input last_known_state
+                    data:
+                      value: "AUTO_OFF"
+                  - service: input_datetime.set_datetime
+                    target:
+                      entity_id: !input last_known_update
+                    data:
+                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+            default: []
+
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ not is_reconnect and not is_autocool_pause_off }}"
+                sequence:
+                  - delay: "00:00:01"
+                  - condition: state
+                    entity_id: !input trip_latched
+                    state: "off"
+
+                  - service: input_text.set_value
+                    target:
+                      entity_id: !input last_known_state
+                    data:
+                      value: "{{ 'AUTO_OFF' if is_auto_now else 'MANUAL_OFF' }}"
+                  - service: input_datetime.set_datetime
+                    target:
+                      entity_id: !input last_known_update
+                    data:
+                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+            default: []
+
+      - conditions:
+          - condition: trigger
+            id: manual_tick
+          - condition: state
+            entity_id: !input fan_switch
+            state: "on"
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: state
+                    entity_id: !input auto_active
+                    state: "on"
+                  - condition: state
+                    entity_id: !input trip_latched
+                    state: "off"
+                sequence:
+                  - variables:
+                      fan_on_ts_m: "{{ as_timestamp(states[fan].last_changed) | float(0) }}"
+                      auto_ts_m: "{{ as_timestamp(states(auto_start_ent)) | float(0) }}"
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ auto_ts_m <= 0 }}"
+                        sequence:
+                          - service: input_datetime.set_datetime
+                            target:
+                              entity_id: !input auto_start_time
+                            data:
+                              datetime: "{{ (fan_on_ts_m | timestamp_custom('%Y-%m-%d %H:%M:%S', true)) }}"
+                    default: []
+            default: []
+
+      - conditions:
+          - condition: trigger
+            id: watchdog_tick
+          - condition: state
+            entity_id: !input auto_active
+            state: "on"
+          - condition: state
+            entity_id: !input trip_latched
+            state: "off"
+        sequence:
+          - variables:
+              left_now: "{{ states(auto_sec_ent) | int(0) }}"
+              fan_is_on2: "{{ is_state(fan,'on') }}"
+              is_autocool_paused: "{{ is_state(auto,'on') and (mode_val == 'Auto Cool') and is_state(paused_ent,'on') }}"
+              new_left: "{{ [left_now - 10, 0] | max }}"
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ left_now <= 0 }}"
+                sequence:
+                  - service: switch.turn_off
+                    target:
+                      entity_id: !input fan_switch
+                  - service: input_boolean.turn_off
+                    target:
+                      entity_id: !input auto_active
+                  - service: input_text.set_value
+                    target:
+                      entity_id: !input last_known_state
+                    data:
+                      value: "AUTO_SUCCESS"
+                  - service: input_datetime.set_datetime
+                    target:
+                      entity_id: !input last_known_update
+                    data:
+                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+                  - service: logbook.log
+                    data:
+                      name: "Grain Bin Fan"
+                      message: "✅ Auto runtime successful — fan ran full runtime and shut off normally."
+                      entity_id: !input fan_switch
+                  - variables:
+                      notify_title: "✅ {{ bin_label_val }} — Auto runtime successful"
+                      notify_message: "{{ bin_label_val }} ran full auto runtime and shut off normally."
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ (notify_complete_actions | length) > 0 }}"
+                        sequence: !input notify_on_complete
+                    default: []
+            default:
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ fan_is_on2 and (not is_autocool_paused) }}"
+                    sequence:
+                      - service: input_number.set_value
+                        target:
+                          entity_id: !input auto_seconds_left
+                        data:
+                          value: "{{ new_left }}"
+                default: []
+
+      - conditions:
+          - condition: trigger
+            id:
+              - amps_change
+              - oc_tick
+          - condition: state
+            entity_id: !input auto_active
+            state: "on"
+          - condition: state
+            entity_id: !input fan_switch
+            state: "on"
+          - condition: state
+            entity_id: !input trip_latched
+            state: "off"
+        sequence:
+          - condition: template
+            value_template: "{{ volts > 10 }}"
+          - variables:
+              start_ts: "{{ as_timestamp(states(auto_start_ent)) | float(0) }}"
+              elapsed: "{{ (as_timestamp(now()) - start_ts) | int(0) }}"
+              in_startup: "{{ elapsed >= startup_from_s and elapsed < running_from_s }}"
+              in_running: "{{ elapsed >= running_from_s }}"
+              should_trip: >
+                {{ fla > 0 and start_ts > 0 and (
+                  (in_startup and amps >= fla * mult_start) or
+                  (in_running and amps >= fla * mult_run)
+                ) }}
+              trip_stage: >
+                {% if in_startup %}STARTUP{% elif in_running %}RUNNING{% else %}STARTUP{% endif %}
+              trip_reason: >
+                {% if in_startup %}Overcurrent during startup{% elif in_running %}Overcurrent during normal run{% else %}Overcurrent during startup{% endif %}
+          - condition: template
+            value_template: "{{ should_trip }}"
+          - service: input_datetime.set_datetime
+            target:
+              entity_id: !input last_trip_time
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+          - service: input_text.set_value
+            target:
+              entity_id: !input last_trip_stage
+            data:
+              value: "{{ trip_stage }}"
+          - service: input_text.set_value
+            target:
+              entity_id: !input last_trip_reason
+            data:
+              value: "{{ trip_reason }}"
+          - service: logbook.log
+            data:
+              name: "Grain Bin Fan Trip"
+              message: "{{ 'AUTO — ' ~ trip_stage ~ ' — ' ~ trip_reason }}"
+              entity_id: !input fan_switch
+          - service: switch.turn_off
+            target:
+              entity_id: !input fan_switch
+          - service: input_boolean.turn_off
+            target:
+              entity_id: !input auto_active
+          - service: input_boolean.turn_on
+            target:
+              entity_id: !input trip_latched
+
+      - conditions:
+          - condition: trigger
+            id: amps_low_60s
+          - condition: state
+            entity_id: !input auto_active
+            state: "on"
+          - condition: state
+            entity_id: !input fan_switch
+            state: "on"
+          - condition: state
+            entity_id: !input trip_latched
+            state: "off"
+        sequence:
+          - variables:
+              start_ts: "{{ as_timestamp(states(auto_start_ent)) | float(0) }}"
+              elapsed: "{{ (as_timestamp(now()) - start_ts) | int(0) }}"
+              reason_60s: >
+                {% if volts > 10 %}
+                  Thermostat Tripped (No current for 60s)
+                {% else %}
+                  Power Loss (No voltage/current for 60s)
+                {% endif %}
+          - condition: template
+            value_template: "{{ start_ts > 0 and elapsed >= running_from_s }}"
+          - service: input_text.set_value
+            target:
+              entity_id: !input last_trip_stage
+            data:
+              value: "Fan"
+          - service: input_text.set_value
+            target:
+              entity_id: !input last_trip_reason
+            data:
+              value: "{{ reason_60s }}"
+          - service: input_datetime.set_datetime
+            target:
+              entity_id: !input last_trip_time
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+          - service: logbook.log
+            data:
+              name: "Grain Bin Fan Trip"
+              message: "{{ 'AUTO — RUNNING — ' ~ reason_60s }}"
+              entity_id: !input fan_switch
+          - service: input_boolean.turn_on
+            target:
+              entity_id: !input trip_latched
+          - service: switch.turn_off
+            target:
+              entity_id: !input fan_switch
+          - service: input_boolean.turn_off
+            target:
+              entity_id: !input auto_active
+
+      - conditions:
+          - condition: trigger
+            id: amps_low_60s
+          - condition: state
+            entity_id: !input auto_active
+            state: "off"
+          - condition: state
+            entity_id: !input fan_switch
+            state: "on"
+          - condition: state
+            entity_id: !input trip_latched
+            state: "off"
+        sequence:
+          - variables:
+              reason_60s_manual: >
+                {% if volts > 10 %}
+                  Thermostat Tripped (No current while running)
+                {% else %}
+                  Power Loss (No voltage/current while running)
+                {% endif %}
+          - service: input_text.set_value
+            target:
+              entity_id: !input last_trip_stage
+            data:
+              value: "Fan"
+          - service: input_text.set_value
+            target:
+              entity_id: !input last_trip_reason
+            data:
+              value: "{{ reason_60s_manual }}"
+          - service: input_datetime.set_datetime
+            target:
+              entity_id: !input last_trip_time
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+          - service: logbook.log
+            data:
+              name: "Grain Bin Fan Trip"
+              message: "{{ 'MANUAL — RUNNING — ' ~ reason_60s_manual }}"
+              entity_id: !input fan_switch
+          - service: input_boolean.turn_on
+            target:
+              entity_id: !input trip_latched
+          - service: switch.turn_off
+            target:
+              entity_id: !input fan_switch
+
+      - conditions:
+          - condition: trigger
+            id: trip_on
+        sequence:
+          - variables:
+              notify_title: "🚨 {{ bin_label_val }} — TRIPPED"
+              notify_message: >
+                {% set st = states(last_stage_ent) | string %}
+                {% set rs = states(last_reason_ent) | string %}
+                {% set tm = states(last_time_ent) | string %}
+                {{ bin_label_val }} tripped.
+                Stage: {{ st }}
+                Reason: {{ rs }}
+                Time: {{ tm }}
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ (notify_trip_actions | length) > 0 }}"
+                sequence: !input notify_on_trip
+            default: []
+
+          - delay:
+              seconds: 5
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: >
+                      {% set r = (states(last_reason_ent) | string) | lower %}
+                      {{ 'startup' in r or 'running' in r or 'overcurrent' in r }}
+                  - condition: state
+                    entity_id: !input fan_switch
+                    state: "on"
+                  - condition: numeric_state
+                    entity_id: !input amps_sensor
+                    below: 0.2
+                sequence:
+                  - service: input_text.set_value
+                    target:
+                      entity_id: !input last_trip_stage
+                    data:
+                      value: "Fan"
+                  - service: input_text.set_value
+                    target:
+                      entity_id: !input last_trip_reason
+                    data:
+                      value: >
+                        {% if volts > 10 %}
+                          Thermostat Tripped (No current while commanded ON)
+                        {% else %}
+                          Power Loss (No voltage/current while commanded ON)
+                        {% endif %}
+                  - service: input_datetime.set_datetime
+                    target:
+                      entity_id: !input last_trip_time
+                    data:
+                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+                  - service: logbook.log
+                    data:
+                      name: "Grain Bin Fan Trip"
+                      message: >
+                        RECLASSIFIED — {% if volts > 10 %}
+                          Thermostat Tripped (No current while commanded ON)
+                        {% else %}
+                          Power Loss (No voltage/current while commanded ON)
+                        {% endif %}
+                      entity_id: !input fan_switch
+            default: []
+
+    default: []
