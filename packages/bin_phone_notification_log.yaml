@@ -1,0 +1,146 @@
+################################################################################
+# BIN EVENT LOG (stupid simple)
+# - ONE entry per TRIP (when binX_trip turns ON)
+# - ONE entry per SUCCESS (when binX_last_known_state becomes AUTO_SUCCESS)
+# - Dashboard logbook shows ONLY these helper changes
+################################################################################
+
+input_text:
+  bin1_notify_last:
+    name: "Bin 1 — Last Phone Notification"
+    max: 255
+  bin2_notify_last:
+    name: "Bin 2 — Last Phone Notification"
+    max: 255
+  bin3_notify_last:
+    name: "Bin 3 — Last Phone Notification"
+    max: 255
+  bin4_notify_last:
+    name: "Bin 4 — Last Phone Notification"
+    max: 255
+  bin5_notify_last:
+    name: "Bin 5 — Last Phone Notification"
+    max: 255
+  bin6_notify_last:
+    name: "Bin 6 — Last Phone Notification"
+    max: 255
+  bin7_notify_last:
+    name: "Bin 7 — Last Phone Notification"
+    max: 255
+  bin8_notify_last:
+    name: "Bin 8 — Last Phone Notification"
+    max: 255
+  bin9_notify_last:
+    name: "Bin 9 — Last Phone Notification"
+    max: 255
+  bin10_notify_last:
+    name: "Bin 10 — Last Phone Notification"
+    max: 255
+
+input_datetime:
+  bin1_notify_last_time:
+    name: "Bin 1 — Last Phone Notification Time"
+    has_date: true
+    has_time: true
+  bin2_notify_last_time:
+    name: "Bin 2 — Last Phone Notification Time"
+    has_date: true
+    has_time: true
+  bin3_notify_last_time:
+    name: "Bin 3 — Last Phone Notification Time"
+    has_date: true
+    has_time: true
+  bin4_notify_last_time:
+    name: "Bin 4 — Last Phone Notification Time"
+    has_date: true
+    has_time: true
+  bin5_notify_last_time:
+    name: "Bin 5 — Last Phone Notification Time"
+    has_date: true
+    has_time: true
+  bin6_notify_last_time:
+    name: "Bin 6 — Last Phone Notification Time"
+    has_date: true
+    has_time: true
+  bin7_notify_last_time:
+    name: "Bin 7 — Last Phone Notification Time"
+    has_date: true
+    has_time: true
+  bin8_notify_last_time:
+    name: "Bin 8 — Last Phone Notification Time"
+    has_date: true
+    has_time: true
+  bin9_notify_last_time:
+    name: "Bin 9 — Last Phone Notification Time"
+    has_date: true
+    has_time: true
+  bin10_notify_last_time:
+    name: "Bin 10 — Last Phone Notification Time"
+    has_date: true
+    has_time: true
+
+automation:
+  - id: bin_phone_log_trip
+    alias: "Bin Phone Log — Trip (one per trip)"
+    mode: queued
+    trigger:
+      - platform: state
+        entity_id:
+          - input_boolean.bin1_trip
+          - input_boolean.bin2_trip
+          - input_boolean.bin3_trip
+          - input_boolean.bin4_trip
+          - input_boolean.bin5_trip
+          - input_boolean.bin6_trip
+          - input_boolean.bin7_trip
+          - input_boolean.bin8_trip
+          - input_boolean.bin9_trip
+          - input_boolean.bin10_trip
+        to: "on"
+    variables:
+      bin: "{{ (trigger.entity_id | regex_findall('bin(\\d+)_trip'))[0] }}"
+      reason: "{{ states('input_text.bin' ~ bin ~ '_last_trip_reason') }}"
+    action:
+      # These 2 writes are what your dashboard logbook shows (nothing else).
+      - service: input_text.set_value
+        target:
+          entity_id: "{{ 'input_text.bin' ~ bin ~ '_notify_last' }}"
+        data:
+          value: >
+            TRIP — {{ reason if reason not in ['unknown','unavailable','none',''] else 'Trip detected' }}
+      - service: input_datetime.set_datetime
+        target:
+          entity_id: "{{ 'input_datetime.bin' ~ bin ~ '_notify_last_time' }}"
+        data:
+          datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+  - id: bin_phone_log_success
+    alias: "Bin Phone Log — Auto Success (one per success)"
+    mode: queued
+    trigger:
+      - platform: state
+        entity_id:
+          - input_text.bin1_last_known_state
+          - input_text.bin2_last_known_state
+          - input_text.bin3_last_known_state
+          - input_text.bin4_last_known_state
+          - input_text.bin5_last_known_state
+          - input_text.bin6_last_known_state
+          - input_text.bin7_last_known_state
+          - input_text.bin8_last_known_state
+          - input_text.bin9_last_known_state
+          - input_text.bin10_last_known_state
+        to: "AUTO_SUCCESS"
+    variables:
+      bin: "{{ (trigger.entity_id | regex_findall('bin(\\d+)_last_known_state'))[0] }}"
+    action:
+      - service: input_text.set_value
+        target:
+          entity_id: "{{ 'input_text.bin' ~ bin ~ '_notify_last' }}"
+        data:
+          value: "SUCCESS — Auto runtime completed"
+      - service: input_datetime.set_datetime
+        target:
+          entity_id: "{{ 'input_datetime.bin' ~ bin ~ '_notify_last_time' }}"
+        data:
+          datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
