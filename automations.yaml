@@ -1,0 +1,590 @@
+- id: bin1_fan
+  alias: Bin 1 Fan
+  description: ''
+  use_blueprint:
+    path: grain_smart_bin/smart_bin_fan_protection.yaml
+    input:
+      bin_label: Bin 1
+      fan_switch: switch.bin1
+      amps_sensor: sensor.bin1amps
+      volts_sensor: sensor.bin1volts
+      fan_mode: input_select.bin1_fan_mode
+      outside_temp: sensor.temp
+      outside_humidity: sensor.humidity
+      grain_temp: sensor.bin1
+      dewpoint_sensor: sensor.dewpoint
+      condensation_protection: input_boolean.bin1_condensation_protection
+      condensation_margin: input_number.bin1_condensation_margin
+      auto_cool_temp: input_number.bin1_auto_cool_temp
+      auto_cool_temp_deadband: input_number.bin1_auto_cool_temp_deadband
+      auto_cool_humidity: input_number.bin1_auto_cool_humidity
+      auto_cool_paused: input_boolean.bin1_auto_cool_paused
+      auto_cool_pause_reason: input_text.bin1_auto_cool_pause_reason
+      auto_active: input_boolean.bin1_auto
+      trip_latched: input_boolean.bin1_trip
+      start_button: input_button.bin1_auto_start
+      stop_button: input_button.bin1_auto_stop
+      clear_trip_button: input_button.bin1_clear_trip
+      auto_runtime_hours: input_number.bin1_auto_max_runtime_hours
+      auto_seconds_left: input_number.bin1_auto_seconds_left
+      auto_start_time: input_datetime.bin1_auto_start_time
+      manual_start_time: input_datetime.bin1_manual_start
+      fla_number: input_number.bin1_fla
+      mult_start_number: input_number.bin1_mult_start
+      mult_run_number: input_number.bin1_mult_run
+      startup_trip_seconds: input_select.bin1_startup_trip_seconds
+      running_trip_seconds: input_select.bin1_running_trip_seconds
+      startup_ignore_seconds: input_number.bin1_startup_ignore_seconds
+      last_trip_stage: input_text.bin1_last_trip_stage
+      last_trip_reason: input_text.bin1_last_trip_reason
+      last_trip_time: input_datetime.bin1_last_trip_time
+      last_known_state: input_text.bin1_last_known_state
+      last_known_update: input_datetime.bin1_last_known_update
+      reset_lifetime_button: input_button.bin1_reset_lifetime_cost
+      lifetime_energy_total_kwh: sensor.bin1_energy_total_kwh
+      reset_savings_button: input_button.bin1_reset_auto_cool_savings
+      savings_energy_total_kwh: sensor.bin1_auto_cool_saved_total_kwh
+      global_last_start: input_datetime.fan_start_queue_last_start
+      global_stagger_seconds: input_number.fan_start_queue_stagger_seconds
+      global_lock: input_boolean.fan_start_queue_lock
+      notify_on_trip:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+      notify_on_complete:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+
+- id: bin2_fan
+  alias: Bin 2 Fan
+  use_blueprint:
+    path: grain_smart_bin/smart_bin_fan_protection.yaml
+    input:
+      bin_label: Bin 2
+      fan_switch: switch.bin2
+      amps_sensor: sensor.bin2amps
+      volts_sensor: sensor.bin2volts
+      fan_mode: input_select.bin2_fan_mode
+      outside_temp: sensor.temp
+      outside_humidity: sensor.humidity
+      grain_temp: sensor.bin2
+      dewpoint_sensor: sensor.dewpoint
+      condensation_protection: input_boolean.bin2_condensation_protection
+      condensation_margin: input_number.bin2_condensation_margin
+      auto_cool_temp: input_number.bin2_auto_cool_temp
+      auto_cool_temp_deadband: input_number.bin2_auto_cool_temp_deadband
+      auto_cool_humidity: input_number.bin2_auto_cool_humidity
+      auto_cool_paused: input_boolean.bin2_auto_cool_paused
+      auto_cool_pause_reason: input_text.bin2_auto_cool_pause_reason
+      auto_active: input_boolean.bin2_auto
+      trip_latched: input_boolean.bin2_trip
+      start_button: input_button.bin2_auto_start
+      stop_button: input_button.bin2_auto_stop
+      clear_trip_button: input_button.bin2_clear_trip
+      auto_runtime_hours: input_number.bin2_auto_max_runtime_hours
+      auto_seconds_left: input_number.bin2_auto_seconds_left
+      auto_start_time: input_datetime.bin2_auto_start_time
+      manual_start_time: input_datetime.bin2_manual_start
+      fla_number: input_number.bin2_fla
+      mult_start_number: input_number.bin2_mult_start
+      mult_run_number: input_number.bin2_mult_run
+      startup_trip_seconds: input_select.bin2_startup_trip_seconds
+      running_trip_seconds: input_select.bin2_running_trip_seconds
+      startup_ignore_seconds: input_number.bin2_startup_ignore_seconds
+      last_trip_stage: input_text.bin2_last_trip_stage
+      last_trip_reason: input_text.bin2_last_trip_reason
+      last_trip_time: input_datetime.bin2_last_trip_time
+      last_known_state: input_text.bin2_last_known_state
+      last_known_update: input_datetime.bin2_last_known_update
+      reset_lifetime_button: input_button.bin2_reset_lifetime_cost
+      lifetime_energy_total_kwh: sensor.bin2_energy_total_kwh
+      reset_savings_button: input_button.bin2_reset_auto_cool_savings
+      savings_energy_total_kwh: sensor.bin2_auto_cool_saved_total_kwh
+      global_last_start: input_datetime.fan_start_queue_last_start
+      global_stagger_seconds: input_number.fan_start_queue_stagger_seconds
+      global_lock: input_boolean.fan_start_queue_lock
+      notify_on_trip:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+      notify_on_complete:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+
+- id: bin3_fan
+  alias: Bin 3 Fan
+  use_blueprint:
+    path: grain_smart_bin/smart_bin_fan_protection.yaml
+    input:
+      bin_label: Bin 3
+      fan_switch: switch.bin3
+      amps_sensor: sensor.bin3amps
+      volts_sensor: sensor.bin3volts
+      fan_mode: input_select.bin3_fan_mode
+      outside_temp: sensor.temp
+      outside_humidity: sensor.humidity
+      grain_temp: sensor.bin3
+      dewpoint_sensor: sensor.dewpoint
+      condensation_protection: input_boolean.bin3_condensation_protection
+      condensation_margin: input_number.bin3_condensation_margin
+      auto_cool_temp: input_number.bin3_auto_cool_temp
+      auto_cool_temp_deadband: input_number.bin3_auto_cool_temp_deadband
+      auto_cool_humidity: input_number.bin3_auto_cool_humidity
+      auto_cool_paused: input_boolean.bin3_auto_cool_paused
+      auto_cool_pause_reason: input_text.bin3_auto_cool_pause_reason
+      auto_active: input_boolean.bin3_auto
+      trip_latched: input_boolean.bin3_trip
+      start_button: input_button.bin3_auto_start
+      stop_button: input_button.bin3_auto_stop
+      clear_trip_button: input_button.bin3_clear_trip
+      auto_runtime_hours: input_number.bin3_auto_max_runtime_hours
+      auto_seconds_left: input_number.bin3_auto_seconds_left
+      auto_start_time: input_datetime.bin3_auto_start_time
+      manual_start_time: input_datetime.bin3_manual_start
+      fla_number: input_number.bin3_fla
+      mult_start_number: input_number.bin3_mult_start
+      mult_run_number: input_number.bin3_mult_run
+      startup_trip_seconds: input_select.bin3_startup_trip_seconds
+      running_trip_seconds: input_select.bin3_running_trip_seconds
+      startup_ignore_seconds: input_number.bin3_startup_ignore_seconds
+      last_trip_stage: input_text.bin3_last_trip_stage
+      last_trip_reason: input_text.bin3_last_trip_reason
+      last_trip_time: input_datetime.bin3_last_trip_time
+      last_known_state: input_text.bin3_last_known_state
+      last_known_update: input_datetime.bin3_last_known_update
+      reset_lifetime_button: input_button.bin3_reset_lifetime_cost
+      lifetime_energy_total_kwh: sensor.bin3_energy_total_kwh
+      reset_savings_button: input_button.bin3_reset_auto_cool_savings
+      savings_energy_total_kwh: sensor.bin3_auto_cool_saved_total_kwh
+      global_last_start: input_datetime.fan_start_queue_last_start
+      global_stagger_seconds: input_number.fan_start_queue_stagger_seconds
+      global_lock: input_boolean.fan_start_queue_lock
+      notify_on_trip:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+      notify_on_complete:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+
+- id: bin4_fan
+  alias: Bin 4 Fan
+  use_blueprint:
+    path: grain_smart_bin/smart_bin_fan_protection.yaml
+    input:
+      bin_label: Bin 4
+      fan_switch: switch.bin4
+      amps_sensor: sensor.bin4amps
+      volts_sensor: sensor.bin4volts
+      fan_mode: input_select.bin4_fan_mode
+      outside_temp: sensor.temp
+      outside_humidity: sensor.humidity
+      grain_temp: sensor.bin4
+      dewpoint_sensor: sensor.dewpoint
+      condensation_protection: input_boolean.bin4_condensation_protection
+      condensation_margin: input_number.bin4_condensation_margin
+      auto_cool_temp: input_number.bin4_auto_cool_temp
+      auto_cool_temp_deadband: input_number.bin4_auto_cool_temp_deadband
+      auto_cool_humidity: input_number.bin4_auto_cool_humidity
+      auto_cool_paused: input_boolean.bin4_auto_cool_paused
+      auto_cool_pause_reason: input_text.bin4_auto_cool_pause_reason
+      auto_active: input_boolean.bin4_auto
+      trip_latched: input_boolean.bin4_trip
+      start_button: input_button.bin4_auto_start
+      stop_button: input_button.bin4_auto_stop
+      clear_trip_button: input_button.bin4_clear_trip
+      auto_runtime_hours: input_number.bin4_auto_max_runtime_hours
+      auto_seconds_left: input_number.bin4_auto_seconds_left
+      auto_start_time: input_datetime.bin4_auto_start_time
+      manual_start_time: input_datetime.bin4_manual_start
+      fla_number: input_number.bin4_fla
+      mult_start_number: input_number.bin4_mult_start
+      mult_run_number: input_number.bin4_mult_run
+      startup_trip_seconds: input_select.bin4_startup_trip_seconds
+      running_trip_seconds: input_select.bin4_running_trip_seconds
+      startup_ignore_seconds: input_number.bin4_startup_ignore_seconds
+      last_trip_stage: input_text.bin4_last_trip_stage
+      last_trip_reason: input_text.bin4_last_trip_reason
+      last_trip_time: input_datetime.bin4_last_trip_time
+      last_known_state: input_text.bin4_last_known_state
+      last_known_update: input_datetime.bin4_last_known_update
+      reset_lifetime_button: input_button.bin4_reset_lifetime_cost
+      lifetime_energy_total_kwh: sensor.bin4_energy_total_kwh
+      reset_savings_button: input_button.bin4_reset_auto_cool_savings
+      savings_energy_total_kwh: sensor.bin4_auto_cool_saved_total_kwh
+      global_last_start: input_datetime.fan_start_queue_last_start
+      global_stagger_seconds: input_number.fan_start_queue_stagger_seconds
+      global_lock: input_boolean.fan_start_queue_lock
+      notify_on_trip:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+      notify_on_complete:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+
+- id: bin5_fan
+  alias: Bin 5 Fan
+  use_blueprint:
+    path: grain_smart_bin/smart_bin_fan_protection.yaml
+    input:
+      bin_label: Bin 5
+      fan_switch: switch.bin5
+      amps_sensor: sensor.bin5amps
+      volts_sensor: sensor.bin5volts
+      fan_mode: input_select.bin5_fan_mode
+      outside_temp: sensor.temp
+      outside_humidity: sensor.humidity
+      grain_temp: sensor.bin5
+      dewpoint_sensor: sensor.dewpoint
+      condensation_protection: input_boolean.bin5_condensation_protection
+      condensation_margin: input_number.bin5_condensation_margin
+      auto_cool_temp: input_number.bin5_auto_cool_temp
+      auto_cool_temp_deadband: input_number.bin5_auto_cool_temp_deadband
+      auto_cool_humidity: input_number.bin5_auto_cool_humidity
+      auto_cool_paused: input_boolean.bin5_auto_cool_paused
+      auto_cool_pause_reason: input_text.bin5_auto_cool_pause_reason
+      auto_active: input_boolean.bin5_auto
+      trip_latched: input_boolean.bin5_trip
+      start_button: input_button.bin5_auto_start
+      stop_button: input_button.bin5_auto_stop
+      clear_trip_button: input_button.bin5_clear_trip
+      auto_runtime_hours: input_number.bin5_auto_max_runtime_hours
+      auto_seconds_left: input_number.bin5_auto_seconds_left
+      auto_start_time: input_datetime.bin5_auto_start_time
+      manual_start_time: input_datetime.bin5_manual_start
+      fla_number: input_number.bin5_fla
+      mult_start_number: input_number.bin5_mult_start
+      mult_run_number: input_number.bin5_mult_run
+      startup_trip_seconds: input_select.bin5_startup_trip_seconds
+      running_trip_seconds: input_select.bin5_running_trip_seconds
+      startup_ignore_seconds: input_number.bin5_startup_ignore_seconds
+      last_trip_stage: input_text.bin5_last_trip_stage
+      last_trip_reason: input_text.bin5_last_trip_reason
+      last_trip_time: input_datetime.bin5_last_trip_time
+      last_known_state: input_text.bin5_last_known_state
+      last_known_update: input_datetime.bin5_last_known_update
+      reset_lifetime_button: input_button.bin5_reset_lifetime_cost
+      lifetime_energy_total_kwh: sensor.bin5_energy_total_kwh
+      reset_savings_button: input_button.bin5_reset_auto_cool_savings
+      savings_energy_total_kwh: sensor.bin5_auto_cool_saved_total_kwh
+      global_last_start: input_datetime.fan_start_queue_last_start
+      global_stagger_seconds: input_number.fan_start_queue_stagger_seconds
+      global_lock: input_boolean.fan_start_queue_lock
+      notify_on_trip:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+      notify_on_complete:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+
+- id: bin6_fan
+  alias: Bin 6 Fan
+  use_blueprint:
+    path: grain_smart_bin/smart_bin_fan_protection.yaml
+    input:
+      bin_label: Bin 6
+      fan_switch: switch.bin6
+      amps_sensor: sensor.bin6amps
+      volts_sensor: sensor.bin6volts
+      fan_mode: input_select.bin6_fan_mode
+      outside_temp: sensor.temp
+      outside_humidity: sensor.humidity
+      grain_temp: sensor.bin6
+      dewpoint_sensor: sensor.dewpoint
+      condensation_protection: input_boolean.bin6_condensation_protection
+      condensation_margin: input_number.bin6_condensation_margin
+      auto_cool_temp: input_number.bin6_auto_cool_temp
+      auto_cool_temp_deadband: input_number.bin6_auto_cool_temp_deadband
+      auto_cool_humidity: input_number.bin6_auto_cool_humidity
+      auto_cool_paused: input_boolean.bin6_auto_cool_paused
+      auto_cool_pause_reason: input_text.bin6_auto_cool_pause_reason
+      auto_active: input_boolean.bin6_auto
+      trip_latched: input_boolean.bin6_trip
+      start_button: input_button.bin6_auto_start
+      stop_button: input_button.bin6_auto_stop
+      clear_trip_button: input_button.bin6_clear_trip
+      auto_runtime_hours: input_number.bin6_auto_max_runtime_hours
+      auto_seconds_left: input_number.bin6_auto_seconds_left
+      auto_start_time: input_datetime.bin6_auto_start_time
+      manual_start_time: input_datetime.bin6_manual_start
+      fla_number: input_number.bin6_fla
+      mult_start_number: input_number.bin6_mult_start
+      mult_run_number: input_number.bin6_mult_run
+      startup_trip_seconds: input_select.bin6_startup_trip_seconds
+      running_trip_seconds: input_select.bin6_running_trip_seconds
+      startup_ignore_seconds: input_number.bin6_startup_ignore_seconds
+      last_trip_stage: input_text.bin6_last_trip_stage
+      last_trip_reason: input_text.bin6_last_trip_reason
+      last_trip_time: input_datetime.bin6_last_trip_time
+      last_known_state: input_text.bin6_last_known_state
+      last_known_update: input_datetime.bin6_last_known_update
+      reset_lifetime_button: input_button.bin6_reset_lifetime_cost
+      lifetime_energy_total_kwh: sensor.bin6_energy_total_kwh
+      reset_savings_button: input_button.bin6_reset_auto_cool_savings
+      savings_energy_total_kwh: sensor.bin6_auto_cool_saved_total_kwh
+      global_last_start: input_datetime.fan_start_queue_last_start
+      global_stagger_seconds: input_number.fan_start_queue_stagger_seconds
+      global_lock: input_boolean.fan_start_queue_lock
+      notify_on_trip:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+      notify_on_complete:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+
+- id: bin7_fan
+  alias: Bin 7 Fan
+  use_blueprint:
+    path: grain_smart_bin/smart_bin_fan_protection.yaml
+    input:
+      bin_label: Bin 7
+      fan_switch: switch.bin7
+      amps_sensor: sensor.bin7amps
+      volts_sensor: sensor.bin7volts
+      fan_mode: input_select.bin7_fan_mode
+      outside_temp: sensor.temp
+      outside_humidity: sensor.humidity
+      grain_temp: sensor.bin7
+      dewpoint_sensor: sensor.dewpoint
+      condensation_protection: input_boolean.bin7_condensation_protection
+      condensation_margin: input_number.bin7_condensation_margin
+      auto_cool_temp: input_number.bin7_auto_cool_temp
+      auto_cool_temp_deadband: input_number.bin7_auto_cool_temp_deadband
+      auto_cool_humidity: input_number.bin7_auto_cool_humidity
+      auto_cool_paused: input_boolean.bin7_auto_cool_paused
+      auto_cool_pause_reason: input_text.bin7_auto_cool_pause_reason
+      auto_active: input_boolean.bin7_auto
+      trip_latched: input_boolean.bin7_trip
+      start_button: input_button.bin7_auto_start
+      stop_button: input_button.bin7_auto_stop
+      clear_trip_button: input_button.bin7_clear_trip
+      auto_runtime_hours: input_number.bin7_auto_max_runtime_hours
+      auto_seconds_left: input_number.bin7_auto_seconds_left
+      auto_start_time: input_datetime.bin7_auto_start_time
+      manual_start_time: input_datetime.bin7_manual_start
+      fla_number: input_number.bin7_fla
+      mult_start_number: input_number.bin7_mult_start
+      mult_run_number: input_number.bin7_mult_run
+      startup_trip_seconds: input_select.bin7_startup_trip_seconds
+      running_trip_seconds: input_select.bin7_running_trip_seconds
+      startup_ignore_seconds: input_number.bin7_startup_ignore_seconds
+      last_trip_stage: input_text.bin7_last_trip_stage
+      last_trip_reason: input_text.bin7_last_trip_reason
+      last_trip_time: input_datetime.bin7_last_trip_time
+      last_known_state: input_text.bin7_last_known_state
+      last_known_update: input_datetime.bin7_last_known_update
+      reset_lifetime_button: input_button.bin7_reset_lifetime_cost
+      lifetime_energy_total_kwh: sensor.bin7_energy_total_kwh
+      reset_savings_button: input_button.bin7_reset_auto_cool_savings
+      savings_energy_total_kwh: sensor.bin7_auto_cool_saved_total_kwh
+      global_last_start: input_datetime.fan_start_queue_last_start
+      global_stagger_seconds: input_number.fan_start_queue_stagger_seconds
+      global_lock: input_boolean.fan_start_queue_lock
+      notify_on_trip:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+      notify_on_complete:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+
+- id: bin8_fan
+  alias: Bin 8 Fan
+  use_blueprint:
+    path: grain_smart_bin/smart_bin_fan_protection.yaml
+    input:
+      bin_label: Bin 8
+      fan_switch: switch.bin8
+      amps_sensor: sensor.bin8amps
+      volts_sensor: sensor.bin8volts
+      fan_mode: input_select.bin8_fan_mode
+      outside_temp: sensor.temp
+      outside_humidity: sensor.humidity
+      grain_temp: sensor.bin8
+      dewpoint_sensor: sensor.dewpoint
+      condensation_protection: input_boolean.bin8_condensation_protection
+      condensation_margin: input_number.bin8_condensation_margin
+      auto_cool_temp: input_number.bin8_auto_cool_temp
+      auto_cool_temp_deadband: input_number.bin8_auto_cool_temp_deadband
+      auto_cool_humidity: input_number.bin8_auto_cool_humidity
+      auto_cool_paused: input_boolean.bin8_auto_cool_paused
+      auto_cool_pause_reason: input_text.bin8_auto_cool_pause_reason
+      auto_active: input_boolean.bin8_auto
+      trip_latched: input_boolean.bin8_trip
+      start_button: input_button.bin8_auto_start
+      stop_button: input_button.bin8_auto_stop
+      clear_trip_button: input_button.bin8_clear_trip
+      auto_runtime_hours: input_number.bin8_auto_max_runtime_hours
+      auto_seconds_left: input_number.bin8_auto_seconds_left
+      auto_start_time: input_datetime.bin8_auto_start_time
+      manual_start_time: input_datetime.bin8_manual_start
+      fla_number: input_number.bin8_fla
+      mult_start_number: input_number.bin8_mult_start
+      mult_run_number: input_number.bin8_mult_run
+      startup_trip_seconds: input_select.bin8_startup_trip_seconds
+      running_trip_seconds: input_select.bin8_running_trip_seconds
+      startup_ignore_seconds: input_number.bin8_startup_ignore_seconds
+      last_trip_stage: input_text.bin8_last_trip_stage
+      last_trip_reason: input_text.bin8_last_trip_reason
+      last_trip_time: input_datetime.bin8_last_trip_time
+      last_known_state: input_text.bin8_last_known_state
+      last_known_update: input_datetime.bin8_last_known_update
+      reset_lifetime_button: input_button.bin8_reset_lifetime_cost
+      lifetime_energy_total_kwh: sensor.bin8_energy_total_kwh
+      reset_savings_button: input_button.bin8_reset_auto_cool_savings
+      savings_energy_total_kwh: sensor.bin8_auto_cool_saved_total_kwh
+      global_last_start: input_datetime.fan_start_queue_last_start
+      global_stagger_seconds: input_number.fan_start_queue_stagger_seconds
+      global_lock: input_boolean.fan_start_queue_lock
+      notify_on_trip:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+      notify_on_complete:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+
+- id: bin9_fan
+  alias: Bin 9 Fan
+  use_blueprint:
+    path: grain_smart_bin/smart_bin_fan_protection.yaml
+    input:
+      bin_label: Bin 9
+      fan_switch: switch.bin9
+      amps_sensor: sensor.bin9amps
+      volts_sensor: sensor.bin9volts
+      fan_mode: input_select.bin9_fan_mode
+      outside_temp: sensor.temp
+      outside_humidity: sensor.humidity
+      grain_temp: sensor.bin9
+      dewpoint_sensor: sensor.dewpoint
+      condensation_protection: input_boolean.bin9_condensation_protection
+      condensation_margin: input_number.bin9_condensation_margin
+      auto_cool_temp: input_number.bin9_auto_cool_temp
+      auto_cool_temp_deadband: input_number.bin9_auto_cool_temp_deadband
+      auto_cool_humidity: input_number.bin9_auto_cool_humidity
+      auto_cool_paused: input_boolean.bin9_auto_cool_paused
+      auto_cool_pause_reason: input_text.bin9_auto_cool_pause_reason
+      auto_active: input_boolean.bin9_auto
+      trip_latched: input_boolean.bin9_trip
+      start_button: input_button.bin9_auto_start
+      stop_button: input_button.bin9_auto_stop
+      clear_trip_button: input_button.bin9_clear_trip
+      auto_runtime_hours: input_number.bin9_auto_max_runtime_hours
+      auto_seconds_left: input_number.bin9_auto_seconds_left
+      auto_start_time: input_datetime.bin9_auto_start_time
+      manual_start_time: input_datetime.bin9_manual_start
+      fla_number: input_number.bin9_fla
+      mult_start_number: input_number.bin9_mult_start
+      mult_run_number: input_number.bin9_mult_run
+      startup_trip_seconds: input_select.bin9_startup_trip_seconds
+      running_trip_seconds: input_select.bin9_running_trip_seconds
+      startup_ignore_seconds: input_number.bin9_startup_ignore_seconds
+      last_trip_stage: input_text.bin9_last_trip_stage
+      last_trip_reason: input_text.bin9_last_trip_reason
+      last_trip_time: input_datetime.bin9_last_trip_time
+      last_known_state: input_text.bin9_last_known_state
+      last_known_update: input_datetime.bin9_last_known_update
+      reset_lifetime_button: input_button.bin9_reset_lifetime_cost
+      lifetime_energy_total_kwh: sensor.bin9_energy_total_kwh
+      reset_savings_button: input_button.bin9_reset_auto_cool_savings
+      savings_energy_total_kwh: sensor.bin9_auto_cool_saved_total_kwh
+      global_last_start: input_datetime.fan_start_queue_last_start
+      global_stagger_seconds: input_number.fan_start_queue_stagger_seconds
+      global_lock: input_boolean.fan_start_queue_lock
+      notify_on_trip:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+      notify_on_complete:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+
+- id: bin10_fan
+  alias: Bin 10 Fan
+  use_blueprint:
+    path: grain_smart_bin/smart_bin_fan_protection.yaml
+    input:
+      bin_label: Bin 10
+      fan_switch: switch.bin10
+      amps_sensor: sensor.bin10amps
+      volts_sensor: sensor.bin10volts
+      fan_mode: input_select.bin10_fan_mode
+      outside_temp: sensor.temp
+      outside_humidity: sensor.humidity
+      grain_temp: sensor.bin10
+      dewpoint_sensor: sensor.dewpoint
+      condensation_protection: input_boolean.bin10_condensation_protection
+      condensation_margin: input_number.bin10_condensation_margin
+      auto_cool_temp: input_number.bin10_auto_cool_temp
+      auto_cool_temp_deadband: input_number.bin10_auto_cool_temp_deadband
+      auto_cool_humidity: input_number.bin10_auto_cool_humidity
+      auto_cool_paused: input_boolean.bin10_auto_cool_paused
+      auto_cool_pause_reason: input_text.bin10_auto_cool_pause_reason
+      auto_active: input_boolean.bin10_auto
+      trip_latched: input_boolean.bin10_trip
+      start_button: input_button.bin10_auto_start
+      stop_button: input_button.bin10_auto_stop
+      clear_trip_button: input_button.bin10_clear_trip
+      auto_runtime_hours: input_number.bin10_auto_max_runtime_hours
+      auto_seconds_left: input_number.bin10_auto_seconds_left
+      auto_start_time: input_datetime.bin10_auto_start_time
+      manual_start_time: input_datetime.bin10_manual_start
+      fla_number: input_number.bin10_fla
+      mult_start_number: input_number.bin10_mult_start
+      mult_run_number: input_number.bin10_mult_run
+      startup_trip_seconds: input_select.bin10_startup_trip_seconds
+      running_trip_seconds: input_select.bin10_running_trip_seconds
+      startup_ignore_seconds: input_number.bin10_startup_ignore_seconds
+      last_trip_stage: input_text.bin10_last_trip_stage
+      last_trip_reason: input_text.bin10_last_trip_reason
+      last_trip_time: input_datetime.bin10_last_trip_time
+      last_known_state: input_text.bin10_last_known_state
+      last_known_update: input_datetime.bin10_last_known_update
+      reset_lifetime_button: input_button.bin10_reset_lifetime_cost
+      lifetime_energy_total_kwh: sensor.bin10_energy_total_kwh
+      reset_savings_button: input_button.bin10_reset_auto_cool_savings
+      savings_energy_total_kwh: sensor.bin10_auto_cool_saved_total_kwh
+      global_last_start: input_datetime.fan_start_queue_last_start
+      global_stagger_seconds: input_number.fan_start_queue_stagger_seconds
+      global_lock: input_boolean.fan_start_queue_lock
+      notify_on_trip:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
+      notify_on_complete:
+        - service: notify.mobile_app_iphone
+          data:
+            title: "{{ notify_title }}"
+            message: "{{ notify_message }}"
