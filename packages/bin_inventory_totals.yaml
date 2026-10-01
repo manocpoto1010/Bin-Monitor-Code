@@ -1,0 +1,161 @@
+################################################################################
+# packages/bin_inventory_totals.yaml  ✅ totals for pie chart (Bins 1–10)
+# ✅ Trigger-based (updates ALWAYS)
+# ✅ Lentils combined: Large/Small Green + Large/Small Red
+# ✅ REMOVED: bin counts + filled bin count
+# ✅ IMPROVED: define bin list once (reused everywhere)
+################################################################################
+
+template:
+  - trigger:
+      - platform: state
+        entity_id:
+          - input_select.bin1_commodity
+          - input_select.bin2_commodity
+          - input_select.bin3_commodity
+          - input_select.bin4_commodity
+          - input_select.bin5_commodity
+          - input_select.bin6_commodity
+          - input_select.bin7_commodity
+          - input_select.bin8_commodity
+          - input_select.bin9_commodity
+          - input_select.bin10_commodity
+          - input_number.bin1_total_bushels
+          - input_number.bin2_total_bushels
+          - input_number.bin3_total_bushels
+          - input_number.bin4_total_bushels
+          - input_number.bin5_total_bushels
+          - input_number.bin6_total_bushels
+          - input_number.bin7_total_bushels
+          - input_number.bin8_total_bushels
+          - input_number.bin9_total_bushels
+          - input_number.bin10_total_bushels
+
+    # Shared variables for ALL sensors below
+    variables:
+      bins: >
+        {{
+          [
+            {'c': states('input_select.bin1_commodity'),  'b': states('input_number.bin1_total_bushels')|float(0)},
+            {'c': states('input_select.bin2_commodity'),  'b': states('input_number.bin2_total_bushels')|float(0)},
+            {'c': states('input_select.bin3_commodity'),  'b': states('input_number.bin3_total_bushels')|float(0)},
+            {'c': states('input_select.bin4_commodity'),  'b': states('input_number.bin4_total_bushels')|float(0)},
+            {'c': states('input_select.bin5_commodity'),  'b': states('input_number.bin5_total_bushels')|float(0)},
+            {'c': states('input_select.bin6_commodity'),  'b': states('input_number.bin6_total_bushels')|float(0)},
+            {'c': states('input_select.bin7_commodity'),  'b': states('input_number.bin7_total_bushels')|float(0)},
+            {'c': states('input_select.bin8_commodity'),  'b': states('input_number.bin8_total_bushels')|float(0)},
+            {'c': states('input_select.bin9_commodity'),  'b': states('input_number.bin9_total_bushels')|float(0)},
+            {'c': states('input_select.bin10_commodity'), 'b': states('input_number.bin10_total_bushels')|float(0)}
+          ]
+        }}
+      lentil_states:
+        - Large Green Lentils
+        - Small Green Lentils
+        - Large Red Lentils
+        - Small Red Lentils
+
+    sensor:
+      - name: "Inventory Total Bushels (bu)"
+        unique_id: inventory_total_bushels_bu
+        unit_of_measurement: "bu"
+        state: >
+          {{ (bins | map(attribute='b') | sum) | round(0) }}
+
+      # -------------------------
+      # COMMODITY TOTALS (bu)
+      # -------------------------
+      - name: "Inventory Canola (bu)"
+        unique_id: inventory_canola_bu
+        unit_of_measurement: "bu"
+        state: >
+          {{ (bins | selectattr('c','eq','Canola') | map(attribute='b') | sum) | round(0) }}
+
+      - name: "Inventory Wheat (bu)"
+        unique_id: inventory_wheat_bu
+        unit_of_measurement: "bu"
+        state: >
+          {{ (bins | selectattr('c','eq','Wheat') | map(attribute='b') | sum) | round(0) }}
+
+      - name: "Inventory Durum (bu)"
+        unique_id: inventory_durum_bu
+        unit_of_measurement: "bu"
+        state: >
+          {{ (bins | selectattr('c','eq','Durum') | map(attribute='b') | sum) | round(0) }}
+
+      - name: "Inventory Barley (bu)"
+        unique_id: inventory_barley_bu
+        unit_of_measurement: "bu"
+        state: >
+          {{ (bins | selectattr('c','eq','Barley') | map(attribute='b') | sum) | round(0) }}
+
+      - name: "Inventory Oats (bu)"
+        unique_id: inventory_oats_bu
+        unit_of_measurement: "bu"
+        state: >
+          {{ (bins | selectattr('c','eq','Oats') | map(attribute='b') | sum) | round(0) }}
+
+      - name: "Inventory Flax (bu)"
+        unique_id: inventory_flax_bu
+        unit_of_measurement: "bu"
+        state: >
+          {{ (bins | selectattr('c','eq','Flax') | map(attribute='b') | sum) | round(0) }}
+
+      - name: "Inventory Yellow Peas (bu)"
+        unique_id: inventory_yellow_peas_bu
+        unit_of_measurement: "bu"
+        state: >
+          {{ (bins | selectattr('c','eq','Yellow Peas') | map(attribute='b') | sum) | round(0) }}
+
+      - name: "Inventory Green Peas (bu)"
+        unique_id: inventory_green_peas_bu
+        unit_of_measurement: "bu"
+        state: >
+          {{ (bins | selectattr('c','eq','Green Peas') | map(attribute='b') | sum) | round(0) }}
+
+      - name: "Inventory Lentils (bu)"
+        unique_id: inventory_lentils_bu
+        unit_of_measurement: "bu"
+        state: >
+          {% set ns = namespace(total=0) %}
+          {% for x in bins %}
+            {% if x.c in lentil_states %}
+              {% set ns.total = ns.total + x.b %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.total | round(0) }}
+
+      - name: "Inventory Chickpeas (bu)"
+        unique_id: inventory_chickpeas_bu
+        unit_of_measurement: "bu"
+        state: >
+          {{ (bins | selectattr('c','eq','Chickpeas') | map(attribute='b') | sum) | round(0) }}
+
+      - name: "Inventory Mustard (bu)"
+        unique_id: inventory_mustard_bu
+        unit_of_measurement: "bu"
+        state: >
+          {{ (bins | selectattr('c','eq','Mustard') | map(attribute='b') | sum) | round(0) }}
+
+      - name: "Inventory Rye (bu)"
+        unique_id: inventory_rye_bu
+        unit_of_measurement: "bu"
+        state: >
+          {{ (bins | selectattr('c','eq','Rye') | map(attribute='b') | sum) | round(0) }}
+
+      - name: "Inventory Triticale (bu)"
+        unique_id: inventory_triticale_bu
+        unit_of_measurement: "bu"
+        state: >
+          {{ (bins | selectattr('c','eq','Triticale') | map(attribute='b') | sum) | round(0) }}
+
+      - name: "Inventory Corn (bu)"
+        unique_id: inventory_corn_bu
+        unit_of_measurement: "bu"
+        state: >
+          {{ (bins | selectattr('c','eq','Corn') | map(attribute='b') | sum) | round(0) }}
+
+      - name: "Inventory Other (bu)"
+        unique_id: inventory_other_bu
+        unit_of_measurement: "bu"
+        state: >
+          {{ (bins | selectattr('c','eq','Other') | map(attribute='b') | sum) | round(0) }}
