@@ -1,0 +1,253 @@
+################################################################################
+# emc.yaml  ✅ BULLETPROOF ENTITY IDS (FIXED / HARDENED)
+# - Base EMC sensors: sensor.emc_wheat_percent / durum / canola
+# - Per-bin EMC sensors: sensor.bin1_emc ... sensor.bin10_emc  (NO EXTRA "_")
+#
+# IMPORTANT:
+# - This assumes your outside sensors are: sensor.temp and sensor.humidity
+#   If yours are different, change ONLY those two entity_ids below.
+################################################################################
+
+template:
+  - sensor:
+
+      # =========================================================================
+      # BASE INPUTS (Outside Air)
+      # =========================================================================
+
+      - name: "EMC Wheat Percent"
+        unique_id: emc_wheat_percent
+        unit_of_measurement: "%"
+        state: >
+          {% set t = states('sensor.temp') %}
+          {% set rh = states('sensor.humidity') %}
+          {% set last = this.state | float(default=0) %}
+          {% if t in ['unknown','unavailable','none',''] or rh in ['unknown','unavailable','none',''] %}
+            {{ last }}
+          {% else %}
+            {# Placeholder until your Henderson math is in here #}
+            {{ 0 }}
+          {% endif %}
+        availability: >
+          {{ states('sensor.temp') not in ['unknown','unavailable','none',''] and
+             states('sensor.humidity') not in ['unknown','unavailable','none',''] }}
+
+      - name: "EMC Durum Percent"
+        unique_id: emc_durum_percent
+        unit_of_measurement: "%"
+        state: >
+          {% set t = states('sensor.temp') %}
+          {% set rh = states('sensor.humidity') %}
+          {% set last = this.state | float(default=0) %}
+          {% if t in ['unknown','unavailable','none',''] or rh in ['unknown','unavailable','none',''] %}
+            {{ last }}
+          {% else %}
+            {# Placeholder until your Henderson math is in here #}
+            {{ 0 }}
+          {% endif %}
+        availability: >
+          {{ states('sensor.temp') not in ['unknown','unavailable','none',''] and
+             states('sensor.humidity') not in ['unknown','unavailable','none',''] }}
+
+      - name: "EMC Canola Percent"
+        unique_id: emc_canola_percent
+        unit_of_measurement: "%"
+        state: >
+          {% set t = states('sensor.temp') %}
+          {% set rh = states('sensor.humidity') %}
+          {% set last = this.state | float(default=0) %}
+          {% if t in ['unknown','unavailable','none',''] or rh in ['unknown','unavailable','none',''] %}
+            {{ last }}
+          {% else %}
+            {# Placeholder until your Henderson math is in here #}
+            {{ 0 }}
+          {% endif %}
+        availability: >
+          {{ states('sensor.temp') not in ['unknown','unavailable','none',''] and
+             states('sensor.humidity') not in ['unknown','unavailable','none',''] }}
+
+      # =========================================================================
+      # PER-BIN EMC (STABLE ENTITY IDS: sensor.bin1_emc ... sensor.bin10_emc)
+      # Uses commodity selection to pick wheat/durum/canola base EMC.
+      # Keeps last good value if base EMC is unknown/unavailable.
+      # =========================================================================
+
+      - name: "Bin1 EMC"
+        unique_id: bin1_emc
+        unit_of_measurement: "%"
+        state: >
+          {% set last = this.state | float(default=0) %}
+          {% set c = (states('input_select.bin1_commodity') | string | lower) %}
+          {% set e =
+               'sensor.emc_durum_percent' if 'durum' in c else
+               'sensor.emc_canola_percent' if 'canola' in c else
+               'sensor.emc_wheat_percent'
+          %}
+          {% set v = states(e) %}
+          {% if v in ['unknown','unavailable','none',''] %}
+            {{ last }}
+          {% else %}
+            {{ v | float(default=last) }}
+          {% endif %}
+
+      - name: "Bin2 EMC"
+        unique_id: bin2_emc
+        unit_of_measurement: "%"
+        state: >
+          {% set last = this.state | float(default=0) %}
+          {% set c = (states('input_select.bin2_commodity') | string | lower) %}
+          {% set e =
+               'sensor.emc_durum_percent' if 'durum' in c else
+               'sensor.emc_canola_percent' if 'canola' in c else
+               'sensor.emc_wheat_percent'
+          %}
+          {% set v = states(e) %}
+          {% if v in ['unknown','unavailable','none',''] %}
+            {{ last }}
+          {% else %}
+            {{ v | float(default=last) }}
+          {% endif %}
+
+      - name: "Bin3 EMC"
+        unique_id: bin3_emc
+        unit_of_measurement: "%"
+        state: >
+          {% set last = this.state | float(default=0) %}
+          {% set c = (states('input_select.bin3_commodity') | string | lower) %}
+          {% set e =
+               'sensor.emc_durum_percent' if 'durum' in c else
+               'sensor.emc_canola_percent' if 'canola' in c else
+               'sensor.emc_wheat_percent'
+          %}
+          {% set v = states(e) %}
+          {% if v in ['unknown','unavailable','none',''] %}
+            {{ last }}
+          {% else %}
+            {{ v | float(default=last) }}
+          {% endif %}
+
+      - name: "Bin4 EMC"
+        unique_id: bin4_emc
+        unit_of_measurement: "%"
+        state: >
+          {% set last = this.state | float(default=0) %}
+          {% set c = (states('input_select.bin4_commodity') | string | lower) %}
+          {% set e =
+               'sensor.emc_durum_percent' if 'durum' in c else
+               'sensor.emc_canola_percent' if 'canola' in c else
+               'sensor.emc_wheat_percent'
+          %}
+          {% set v = states(e) %}
+          {% if v in ['unknown','unavailable','none',''] %}
+            {{ last }}
+          {% else %}
+            {{ v | float(default=last) }}
+          {% endif %}
+
+      - name: "Bin5 EMC"
+        unique_id: bin5_emc
+        unit_of_measurement: "%"
+        state: >
+          {% set last = this.state | float(default=0) %}
+          {% set c = (states('input_select.bin5_commodity') | string | lower) %}
+          {% set e =
+               'sensor.emc_durum_percent' if 'durum' in c else
+               'sensor.emc_canola_percent' if 'canola' in c else
+               'sensor.emc_wheat_percent'
+          %}
+          {% set v = states(e) %}
+          {% if v in ['unknown','unavailable','none',''] %}
+            {{ last }}
+          {% else %}
+            {{ v | float(default=last) }}
+          {% endif %}
+
+      - name: "Bin6 EMC"
+        unique_id: bin6_emc
+        unit_of_measurement: "%"
+        state: >
+          {% set last = this.state | float(default=0) %}
+          {% set c = (states('input_select.bin6_commodity') | string | lower) %}
+          {% set e =
+               'sensor.emc_durum_percent' if 'durum' in c else
+               'sensor.emc_canola_percent' if 'canola' in c else
+               'sensor.emc_wheat_percent'
+          %}
+          {% set v = states(e) %}
+          {% if v in ['unknown','unavailable','none',''] %}
+            {{ last }}
+          {% else %}
+            {{ v | float(default=last) }}
+          {% endif %}
+
+      - name: "Bin7 EMC"
+        unique_id: bin7_emc
+        unit_of_measurement: "%"
+        state: >
+          {% set last = this.state | float(default=0) %}
+          {% set c = (states('input_select.bin7_commodity') | string | lower) %}
+          {% set e =
+               'sensor.emc_durum_percent' if 'durum' in c else
+               'sensor.emc_canola_percent' if 'canola' in c else
+               'sensor.emc_wheat_percent'
+          %}
+          {% set v = states(e) %}
+          {% if v in ['unknown','unavailable','none',''] %}
+            {{ last }}
+          {% else %}
+            {{ v | float(default=last) }}
+          {% endif %}
+
+      - name: "Bin8 EMC"
+        unique_id: bin8_emc
+        unit_of_measurement: "%"
+        state: >
+          {% set last = this.state | float(default=0) %}
+          {% set c = (states('input_select.bin8_commodity') | string | lower) %}
+          {% set e =
+               'sensor.emc_durum_percent' if 'durum' in c else
+               'sensor.emc_canola_percent' if 'canola' in c else
+               'sensor.emc_wheat_percent'
+          %}
+          {% set v = states(e) %}
+          {% if v in ['unknown','unavailable','none',''] %}
+            {{ last }}
+          {% else %}
+            {{ v | float(default=last) }}
+          {% endif %}
+
+      - name: "Bin9 EMC"
+        unique_id: bin9_emc
+        unit_of_measurement: "%"
+        state: >
+          {% set last = this.state | float(default=0) %}
+          {% set c = (states('input_select.bin9_commodity') | string | lower) %}
+          {% set e =
+               'sensor.emc_durum_percent' if 'durum' in c else
+               'sensor.emc_canola_percent' if 'canola' in c else
+               'sensor.emc_wheat_percent'
+          %}
+          {% set v = states(e) %}
+          {% if v in ['unknown','unavailable','none',''] %}
+            {{ last }}
+          {% else %}
+            {{ v | float(default=last) }}
+          {% endif %}
+
+      - name: "Bin10 EMC"
+        unique_id: bin10_emc
+        unit_of_measurement: "%"
+        state: >
+          {% set last = this.state | float(default=0) %}
+          {% set c = (states('input_select.bin10_commodity') | string | lower) %}
+          {% set e =
+               'sensor.emc_durum_percent' if 'durum' in c else
+               'sensor.emc_canola_percent' if 'canola' in c else
+               'sensor.emc_wheat_percent'
+          %}
+          {% set v = states(e) %}
+          {% if v in ['unknown','unavailable','none',''] %}
+            {{ last }}
+          {% else %}
+            {{ v | float(default=last) }}
+          {% endif %}
