@@ -1,0 +1,577 @@
+################################################################################
+# packages/bin1.yaml  (BIN 1)  ✅ NO DELETES (MOVED FROM configuration.yaml)
+# ✅ Lifetime cost counts whenever fan is running (manual OR auto)
+# ✅ Lifetime cost is TRUE running total until Reset button is pressed
+# ✅ Savings counts only while Auto Cool is paused
+# ✅ Reset buttons now use manual reset baselines (no yearly auto reset)
+# ✅ NEW: Runtime totals (Last 24h / 7d / 30d) for your chart page
+# ✅ NEW: Condensation Protection toggle + margin
+# ✅ NEW: Per-bin Air Conditions sensors:
+#    - sensor.bin1_dew_point_margin
+#    - sensor.bin1_air_risk_status
+#    - binary_sensor.bin1_moisture_risk
+#    - binary_sensor.bin1_condensation_protection_block
+#
+# ✅ PERSISTENCE FIX:
+# - Removed "initial:" so these values persist across restarts
+#
+# ✅ FIXED:
+# - Lifetime energy source now points to sensor.bin1_run_power_calc
+# - Resettable energy total now reads sensor.bin1_energy
+# - Reset button baseline now stores sensor.bin1_energy
+# - Run power now uses REAL live amps × volts instead of FLA × volts
+################################################################################
+
+# =========================
+# BIN 1 — HELPERS
+# =========================
+
+input_number:
+  bin1_fla:
+    name: "Bin1 Fan FLA"
+    min: 0
+    max: 100
+    step: 0.1
+    unit_of_measurement: "A"
+    mode: box
+
+  bin1_mult_start:
+    name: "Bin1 STARTUP Limit Mult"
+    min: 1.0
+    max: 30.0
+    step: 0.01
+    mode: box
+
+  bin1_mult_run:
+    name: "Bin1 RUNNING Limit Mult"
+    min: 1.0
+    max: 30.0
+    step: 0.01
+    mode: box
+
+  bin1_auto_max_runtime_hours:
+    name: "Bin1 Runtime"
+    min: 0
+    max: 168
+    step: 0.25
+    unit_of_measurement: "h"
+    mode: box
+
+  bin1_auto_seconds_left:
+    name: "Bin1 Auto Seconds Left"
+    min: 0
+    max: 604800
+    step: 10
+    unit_of_measurement: "s"
+    mode: box
+
+  bin1_auto_cool_temp:
+    name: "Bin1 Auto Cool Temp Max (run ≤ this)"
+    min: -40
+    max: 40
+    step: 0.5
+    unit_of_measurement: "°C"
+    mode: box
+
+  bin1_auto_cool_humidity:
+    name: "Bin1 Auto Cool Humidity Max (run ≤ this)"
+    min: 0
+    max: 100
+    step: 1
+    unit_of_measurement: "%"
+    mode: box
+
+  bin1_auto_cool_temp_deadband:
+    name: "Bin1 Auto Cool Temp Deadband (°C)"
+    min: 0
+    max: 5
+    step: 0.1
+    unit_of_measurement: "°C"
+    mode: box
+
+  bin1_startup_ignore_seconds:
+    name: "Bin1 Startup Ignore Seconds"
+    min: 0
+    max: 60
+    step: 1
+    unit_of_measurement: "s"
+    mode: box
+
+  bin1_session_energy_start_kwh:
+    name: "Bin1 Session Energy Start (kWh)"
+    min: 0
+    max: 100000
+    step: 0.001
+    mode: box
+    unit_of_measurement: "kWh"
+
+  bin1_condensation_margin:
+    name: "Bin1 Condensation Margin"
+    min: 1
+    max: 5
+    step: 0.5
+    unit_of_measurement: "°C"
+    mode: box
+
+  # ✅ MANUAL RESET BASELINES
+  bin1_energy_reset_baseline_kwh:
+    name: "Bin1 Energy Reset Baseline"
+    min: 0
+    max: 1000000
+    step: 0.001
+    unit_of_measurement: "kWh"
+    mode: box
+
+  bin1_auto_cool_saved_reset_baseline_kwh:
+    name: "Bin1 Auto Cool Saved Reset Baseline"
+    min: 0
+    max: 1000000
+    step: 0.001
+    unit_of_measurement: "kWh"
+    mode: box
+
+
+input_select:
+  bin1_fan_mode:
+    name: "Bin1 Fan Mode"
+    options:
+      - "Fan Monitor Only"
+      - "Auto Cool"
+
+  bin1_startup_trip_seconds:
+    name: "Bin1 Startup Trip Time"
+    options: ["3","5","8","10","12","15","20"]
+
+  bin1_running_trip_seconds:
+    name: "Bin1 Running Trip Time"
+    options: ["10","15","20","25","30","40","60"]
+
+
+input_boolean:
+  bin1_auto:
+    name: "Bin1 Auto Session Active"
+
+  bin1_trip:
+    name: "Bin1 Trip Latched"
+
+  bin1_auto_cool_paused:
+    name: "Bin1 Auto Cool Paused"
+
+  bin1_condensation_protection:
+    name: "Bin1 Condensation Protection"
+
+
+input_button:
+  bin1_auto_start:
+    name: "Bin1 Start Auto Fan"
+
+  bin1_auto_stop:
+    name: "Bin1 Auto Stop Fan"
+
+  bin1_clear_trip:
+    name: "Bin1 Clear Trip (Unlatch Auto)"
+
+  # ✅ RESET BUTTONS
+  bin1_reset_lifetime_cost:
+    name: "Bin1 Reset Lifetime Cost"
+
+  bin1_reset_auto_cool_savings:
+    name: "Bin1 Reset Auto Cool Savings"
+
+
+input_text:
+  bin1_last_trip_reason:
+    name: "Bin1 Last Trip Reason"
+    max: 160
+
+  bin1_last_trip_stage:
+    name: "Bin1 Last Trip Stage"
+    max: 40
+
+  bin1_last_known_state:
+    name: "Bin1 Last Known State"
+    max: 32
+
+  bin1_auto_cool_pause_reason:
+    name: "Bin1 Auto Cool Pause Reason"
+    max: 160
+
+
+input_datetime:
+  bin1_last_trip_time:
+    name: "Bin1 Last Trip Time"
+    has_date: true
+    has_time: true
+
+  bin1_auto_start_time:
+    name: "Bin1 Auto Start Time"
+    has_date: true
+    has_time: true
+
+  bin1_manual_start:
+    name: "Bin1 Manual Start Time"
+    has_date: true
+    has_time: true
+
+  bin1_last_known_update:
+    name: "Bin1 Last Known Update"
+    has_date: true
+    has_time: true
+
+
+# =========================
+# SENSORS
+# =========================
+sensor:
+  # -------------------------
+  # ENERGY (kWh) — integrates run power (watts)
+  # -------------------------
+  - platform: integration
+    source: sensor.bin1_run_power_calc
+    name: "Bin1 Energy"
+    unique_id: bin1_energy
+    unit_prefix: k
+    round: 4
+    method: trapezoidal
+
+  - platform: integration
+    source: sensor.bin1_auto_cool_saved_power
+    name: "Bin1 Auto Cool Saved Energy"
+    unique_id: bin1_auto_cool_saved_energy
+    unit_prefix: k
+    round: 4
+    method: trapezoidal
+
+  # -------------------------
+  # ✅ RUNTIME TOTALS (History Stats)
+  # These count how long switch.bin1 was ON in each window
+  # -------------------------
+  - platform: history_stats
+    name: "Bin1 Runtime (Last 7 Days)"
+    entity_id: switch.bin1
+    state: "on"
+    type: time
+    start: "{{ now() - timedelta(hours=168) }}"
+    end: "{{ now() }}"
+
+  - platform: history_stats
+    name: "Bin1 Runtime (Last 24 Hours)"
+    entity_id: switch.bin1
+    state: "on"
+    type: time
+    start: "{{ now() - timedelta(hours=24) }}"
+    end: "{{ now() }}"
+
+  - platform: history_stats
+    name: "Bin1 Runtime (Last 30 Days)"
+    entity_id: switch.bin1
+    state: "on"
+    type: time
+    start: "{{ now() - timedelta(days=30) }}"
+    end: "{{ now() }}"
+
+
+# =========================
+# TEMPLATE SENSORS
+# =========================
+template:
+  - sensor:
+      - name: "Bin1 Amps Graph"
+        unique_id: bin1amps_graph
+        unit_of_measurement: "A"
+        device_class: current
+        state_class: measurement
+        state: >
+          {% set a = states('sensor.bin1amps') | float(0) %}
+          {{ 0 if a < 1 else a }}
+
+      - name: "Bin1 Auto Time Left"
+        unique_id: bin1_auto_time_left
+        state: >
+          {% set left = states('input_number.bin1_auto_seconds_left')|int(0) %}
+          {% if left <= 0 %}
+            --
+          {% else %}
+            {% set h = left//3600 %}
+            {% set m = (left%3600)//60 %}
+            {% set s = left%60 %}
+            {% if h > 0 %}
+              {{ h }}h {{ m }}m
+            {% elif m > 0 %}
+              {{ m }}m {{ s }}s
+            {% else %}
+              {{ s }}s
+            {% endif %}
+          {% endif %}
+
+      - name: "Bin1 Running Amps Peak"
+        unique_id: bin1_running_amps_peak
+        unit_of_measurement: "A"
+        state_class: measurement
+        state: >
+          {% set fan_on = is_state('switch.bin1','on') %}
+          {% set prev = this.state|float(0) %}
+          {% if not fan_on %}
+            {{ prev }}
+          {% else %}
+            {% set ignore = states('input_number.bin1_startup_ignore_seconds')|float(0) %}
+            {% set on_for = (as_timestamp(now()) - as_timestamp(states.switch.bin1.last_changed))|float(0) %}
+            {% if on_for < ignore %}
+              0
+            {% else %}
+              {% set cur = (states('sensor.bin1amps')|string | regex_replace('[^0-9\\.-]', '')) | float(0) %}
+              {{ [prev, cur] | max | round(2) }}
+            {% endif %}
+          {% endif %}
+
+      # ✅ MANUAL RESETTABLE ENERGY TOTAL
+      - name: "Bin1 Energy Total kWh"
+        unique_id: bin1_energy_total_kwh
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {% set total = states('sensor.bin1_energy')|float(0) %}
+          {% set base = states('input_number.bin1_energy_reset_baseline_kwh')|float(0) %}
+          {{ [total - base, 0] | max | round(4) }}
+
+      # ✅ MANUAL RESETTABLE SAVED ENERGY TOTAL
+      - name: "Bin1 Auto Cool Saved Total kWh"
+        unique_id: bin1_auto_cool_saved_total_kwh
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total
+        state: >
+          {% set total = states('sensor.bin1_auto_cool_saved_energy')|float(0) %}
+          {% set base = states('input_number.bin1_auto_cool_saved_reset_baseline_kwh')|float(0) %}
+          {{ [total - base, 0] | max | round(4) }}
+
+      - name: "Bin1 Total Cost"
+        unique_id: bin1_total_cost
+        unit_of_measurement: "CAD"
+        device_class: monetary
+        state_class: measurement
+        state: >
+          {% set rate = states('input_number.electricity_rate_cad_per_kwh')|float(0.20) %}
+          {% set kwh = states('sensor.bin1_energy_total_kwh')|float(0) %}
+          {{ (kwh * rate) | round(2) }}
+
+      - name: "Bin1 Cost / 24h"
+        unique_id: bin1_cost_24h
+        unit_of_measurement: "CAD"
+        device_class: monetary
+        state_class: measurement
+        state: >
+          {% if is_state('switch.bin1','on') %}
+            {% set a = (states('sensor.bin1amps')|string | regex_replace('[^0-9\\.-]', '')) | float(0) | abs %}
+            {% set v = (states('sensor.bin1volts')|string | regex_replace('[^0-9\\.-]', '')) | float(0) %}
+            {% set rate = states('input_number.electricity_rate_cad_per_kwh')|float(0.20) %}
+            {% set watts = v * a %}
+            {{ ((watts / 1000) * 24 * rate) | round(2) }}
+          {% else %}
+            0
+          {% endif %}
+
+      - name: "Bin1 Auto Cool Savings"
+        unique_id: bin1_auto_cool_savings
+        unit_of_measurement: "CAD"
+        device_class: monetary
+        state_class: measurement
+        state: >
+          {% set rate = states('input_number.electricity_rate_cad_per_kwh')|float(0.20) %}
+          {% set kwh_saved = states('sensor.bin1_auto_cool_saved_total_kwh')|float(0) %}
+          {{ (kwh_saved * rate) | round(2) }}
+
+      # ✅ TRUE per-bin dew point margin
+      - name: "Bin1 Dew Point Margin"
+        unique_id: bin1_dew_point_margin
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        state: >
+          {% set dew = states('sensor.dewpoint') %}
+          {% set grain = states('sensor.bin1') %}
+          {% if dew in ['unknown','unavailable','none',''] or grain in ['unknown','unavailable','none',''] %}
+            unknown
+          {% else %}
+            {{ ((grain | float(0)) - (dew | float(0))) | round(1) }}
+          {% endif %}
+
+      # ✅ NEW: clean traffic-light air risk status
+      - name: "Bin1 Air Risk Status"
+        unique_id: bin1_air_risk_status
+        state: >
+          {% set margin = states('sensor.bin1_dew_point_margin') %}
+          {% if margin in ['unknown','unavailable','none',''] %}
+            ⚪ Unknown
+          {% else %}
+            {% set m = margin | float(0) %}
+            {% if m <= 0 %}
+              🔴 Condensation Risk
+            {% elif m <= 3 %}
+              🟡 Watch
+            {% else %}
+              🟢 Safe
+            {% endif %}
+          {% endif %}
+
+  - binary_sensor:
+      # ✅ TRUE per-bin moisture risk
+      - name: "Bin1 Moisture Risk"
+        unique_id: bin1_moisture_risk
+        state: >
+          {% set dew = states('sensor.dewpoint') %}
+          {% set grain = states('sensor.bin1') %}
+          {% if dew in ['unknown','unavailable','none',''] or grain in ['unknown','unavailable','none',''] %}
+            false
+          {% else %}
+            {{ (dew | float(0)) >= (grain | float(0)) }}
+          {% endif %}
+
+      # ✅ Shows whether Auto Cool protection margin is currently blocking
+      - name: "Bin1 Condensation Protection Block"
+        unique_id: bin1_condensation_protection_block
+        state: >
+          {% set enabled = is_state('input_boolean.bin1_condensation_protection', 'on') %}
+          {% set dew = states('sensor.dewpoint') %}
+          {% set grain = states('sensor.bin1') %}
+          {% set margin = states('input_number.bin1_condensation_margin') %}
+          {% if not enabled %}
+            false
+          {% elif dew in ['unknown','unavailable','none',''] or grain in ['unknown','unavailable','none',''] or margin in ['unknown','unavailable','none',''] %}
+            true
+          {% else %}
+            {{ (dew | float(0)) >= ((grain | float(0)) - (margin | float(0))) }}
+          {% endif %}
+
+  # ✅ Lifetime run power — counts whenever fan is ON (manual OR auto)
+  - trigger:
+      - platform: time_pattern
+        seconds: "/10"
+      - platform: state
+        entity_id:
+          - switch.bin1
+          - sensor.bin1amps
+          - sensor.bin1volts
+    sensor:
+      - name: "Bin1 Run Power Calc"
+        unique_id: bin1_run_power_calc
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {% set fan_on = is_state('switch.bin1','on') %}
+          {% if not fan_on %}
+            0
+          {% else %}
+            {% set a_raw = states('sensor.bin1amps')|string | regex_replace('[^0-9\\.-]', '') %}
+            {% set v_raw = states('sensor.bin1volts')|string | regex_replace('[^0-9\\.-]', '') %}
+            {% set a = a_raw|float(0) | abs %}
+            {% set v = v_raw|float(0) %}
+            {% set volts = (v if v > 10 else 240.0) %}
+            {{ (a * volts) | round(3) }}
+          {% endif %}
+
+  # ✅ Auto Cool saved power — only while Auto Cool is paused and fan is OFF
+  - trigger:
+      - platform: time_pattern
+        seconds: "/10"
+      - platform: state
+        entity_id:
+          - switch.bin1
+          - input_boolean.bin1_auto
+          - input_boolean.bin1_auto_cool_paused
+          - input_select.bin1_fan_mode
+          - input_number.bin1_fla
+          - sensor.bin1amps
+          - sensor.bin1volts
+    sensor:
+      - name: "Bin1 Auto Cool Saved Power"
+        unique_id: bin1_auto_cool_saved_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        state: >
+          {% set auto = is_state('input_boolean.bin1_auto','on') %}
+          {% set paused = is_state('input_boolean.bin1_auto_cool_paused','on') %}
+          {% set mode = states('input_select.bin1_fan_mode') %}
+          {% set fan_on = is_state('switch.bin1','on') %}
+          {% if auto and paused and mode == 'Auto Cool' and (not fan_on) %}
+            {% set a_raw = states('sensor.bin1amps')|string | regex_replace('[^0-9\\.-]', '') %}
+            {% set v_raw = states('sensor.bin1volts')|string | regex_replace('[^0-9\\.-]', '') %}
+            {% set a_live = a_raw|float(0) | abs %}
+            {% set fla = states('input_number.bin1_fla')|float(0) %}
+            {% set amps = fla %}
+            {% set v = v_raw|float(0) %}
+            {% set volts = (v if v > 10 else 240.0) %}
+            {{ (amps * volts) | round(3) }}
+          {% else %}
+            0
+          {% endif %}
+
+  - trigger:
+      - platform: time_pattern
+        seconds: "/1"
+      - platform: state
+        entity_id:
+          - switch.bin1
+          - input_boolean.bin1_auto
+          - input_datetime.bin1_manual_start
+    sensor:
+      - name: "Bin1 Manual Time On"
+        unique_id: bin1_manual_time_on
+        state: >
+          {% if not is_state('switch.bin1','on')
+                or is_state('input_boolean.bin1_auto','on') %}
+            --
+          {% else %}
+            {% set start_ts = as_timestamp(states('input_datetime.bin1_manual_start')) | float(0) %}
+            {% if start_ts <= 0 %}
+              --
+            {% else %}
+              {% set on = (as_timestamp(now()) - start_ts) | int(0) %}
+              {% set h = on//3600 %}
+              {% set m = (on%3600)//60 %}
+              {% set s = on%60 %}
+              {% if h > 0 %}
+                {{ h }}h {{ m }}m
+              {% elif m > 0 %}
+                {{ m }}m {{ s }}s
+              {% else %}
+                {{ s }}s
+              {% endif %}
+            {% endif %}
+          {% endif %}
+
+
+# =========================
+# AUTOMATIONS
+# =========================
+automation:
+  # ✅ Manual reset for lifetime energy/cost
+  - id: bin1_reset_lifetime_cost_baseline
+    alias: "Bin1 Reset Lifetime Cost Baseline"
+    mode: single
+    trigger:
+      - platform: state
+        entity_id: input_button.bin1_reset_lifetime_cost
+    action:
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.bin1_energy_reset_baseline_kwh
+        data:
+          value: "{{ states('sensor.bin1_energy')|float(0) }}"
+
+  # ✅ Manual reset for auto cool saved energy/savings
+  - id: bin1_reset_auto_cool_savings_baseline
+    alias: "Bin1 Reset Auto Cool Savings Baseline"
+    mode: single
+    trigger:
+      - platform: state
+        entity_id: input_button.bin1_reset_auto_cool_savings
+    action:
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.bin1_auto_cool_saved_reset_baseline_kwh
+        data:
+          value: "{{ states('sensor.bin1_auto_cool_saved_energy')|float(0) }}"
